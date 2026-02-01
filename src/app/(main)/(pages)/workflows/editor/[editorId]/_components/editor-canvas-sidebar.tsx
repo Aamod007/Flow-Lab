@@ -20,6 +20,7 @@ import {
 } from '@/lib/editor-utils'
 import EditorCanvasIconHelper from './editor-canvas-card-icon-hepler'
 import AIConfigurationForm from './ai-configuration-form'
+import AgentConfigurationForm from './agent-configuration-form'
 import {
   Accordion,
   AccordionContent,
@@ -51,7 +52,7 @@ const EditorCanvasSidebar = ({ nodes }: Props) => {
         setSlackChannels
       )
     }
-  }, [nodeConnection, setSlackChannels])
+  }, [nodeConnection.slackNode.slackAccessToken, setSlackChannels])
 
   return (
     <aside>
@@ -61,6 +62,7 @@ const EditorCanvasSidebar = ({ nodes }: Props) => {
       >
         <TabsList className="bg-transparent">
           <TabsTrigger value="actions">Actions</TabsTrigger>
+          <TabsTrigger value="agents">Agents</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
         <Separator />
@@ -70,10 +72,37 @@ const EditorCanvasSidebar = ({ nodes }: Props) => {
         >
           {Object.entries(EditorCanvasDefaultCardTypes)
             .filter(
-              ([_, cardType]) =>
-                (!nodes.length && cardType.type === 'Trigger') ||
-                (nodes.length && cardType.type === 'Action')
+              ([cardKey, cardType]) =>
+                !cardKey.includes('Agent') && (
+                  (!nodes.length && cardType.type === 'Trigger') ||
+                  (nodes.length && cardType.type === 'Action')
+                )
             )
+            .map(([cardKey, cardValue]) => (
+              <Card
+                key={cardKey}
+                draggable
+                className="w-full cursor-grab border-black bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900"
+                onDragStart={(event) =>
+                  onDragStart(event, cardKey as EditorCanvasTypes)
+                }
+              >
+                <CardHeader className="flex flex-row items-center gap-4 p-4">
+                  <EditorCanvasIconHelper type={cardKey as EditorCanvasTypes} />
+                  <CardTitle className="text-md">
+                    {cardKey}
+                    <CardDescription>{cardValue.description}</CardDescription>
+                  </CardTitle>
+                </CardHeader>
+              </Card>
+            ))}
+        </TabsContent>
+        <TabsContent
+          value="agents"
+          className="flex flex-col gap-4 p-4"
+        >
+          {Object.entries(EditorCanvasDefaultCardTypes)
+            .filter(([cardKey]) => cardKey.includes('Agent'))
             .map(([cardKey, cardValue]) => (
               <Card
                 key={cardKey}
@@ -97,44 +126,59 @@ const EditorCanvasSidebar = ({ nodes }: Props) => {
           value="settings"
           className="-mt-6"
         >
-          <div className="px-2 py-4 text-center text-xl font-bold">
-            {state.editor.selectedNode.data.title}
+          <div className="px-4 py-6 text-center mb-2">
+            <div className="flex items-center justify-center h-16 w-16 bg-muted rounded-2xl mx-auto mb-3 shadow-inner">
+              <EditorCanvasIconHelper type={state.editor.selectedNode.data.type as EditorCanvasTypes} />
+            </div>
+            <h2 className="text-2xl font-bold tracking-tight">
+              {state.editor.selectedNode.data.title}
+            </h2>
+            <p className="text-xs text-muted-foreground font-mono mt-1 opacity-70">ID: {state.editor.selectedNode.id}</p>
           </div>
 
-          <Accordion type="multiple">
+          <Accordion type="multiple" className="w-full px-4" defaultValue={["Options"]}>
             <AccordionItem
               value="Options"
-              className="border-y-[1px] px-2"
+              className="border border-border rounded-lg mb-3 overflow-hidden shadow-sm bg-card"
             >
-              <AccordionTrigger className="!no-underline">
-                Account
+              <AccordionTrigger className="px-4 py-3 hover:bg-muted/50 transition-colors !no-underline group">
+                <span className="font-semibold text-sm">Configuration</span>
               </AccordionTrigger>
-              <AccordionContent>
+              <AccordionContent className="p-0 border-t border-border/50">
                 {state.editor.selectedNode.data.title === 'AI' && (
-                  <div className="p-2">
+                  <div className="p-4 bg-muted/10">
                     <AIConfigurationForm nodeConnection={nodeConnection} />
                   </div>
                 )}
-                {CONNECTIONS.map((connection) => (
-                  <RenderConnectionAccordion
-                    key={connection.title}
-                    state={state}
-                    connection={connection}
-                  />
-                ))}
+                {state.editor.selectedNode.data.title?.includes('Agent') && (
+                  <div className="p-4 bg-[#2F006B]/5">
+                    <AgentConfigurationForm />
+                  </div>
+                )}
+                <div className="p-2 flex flex-col gap-2">
+                  {CONNECTIONS.map((connection) => (
+                    <RenderConnectionAccordion
+                      key={connection.title}
+                      state={state}
+                      connection={connection}
+                    />
+                  ))}
+                </div>
               </AccordionContent>
             </AccordionItem>
             <AccordionItem
               value="Expected Output"
-              className="px-2"
+              className="border border-border rounded-lg mb-3 overflow-hidden shadow-sm bg-card"
             >
-              <AccordionTrigger className="!no-underline">
-                Action
+              <AccordionTrigger className="px-4 py-3 hover:bg-muted/50 transition-colors !no-underline">
+                <span className="font-semibold text-sm">Action Outputs</span>
               </AccordionTrigger>
-              <RenderOutputAccordion
-                state={state}
-                nodeConnection={nodeConnection}
-              />
+              <AccordionContent className="p-4 border-t border-border/50 bg-muted/10">
+                <RenderOutputAccordion
+                  state={state}
+                  nodeConnection={nodeConnection}
+                />
+              </AccordionContent>
             </AccordionItem>
           </Accordion>
         </TabsContent>

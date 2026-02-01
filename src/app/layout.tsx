@@ -21,11 +21,46 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={font.className}>
         <ClerkProvider
           publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
           appearance={{ baseTheme: dark }}
+          localization={{
+            signIn: {
+              start: {
+                title: 'Sign in to FlowLab',
+                subtitle: 'Welcome back! Please sign in to continue',
+              },
+              emailCode: {
+                title: 'Check your email',
+                subtitle: 'to continue to FlowLab',
+              },
+              emailLink: {
+                title: 'Check your email',
+                subtitle: 'to continue to FlowLab',
+              },
+              password: {
+                title: 'Enter your password',
+                subtitle: 'to continue to FlowLab',
+              },
+              phoneCode: {
+                title: 'Check your phone',
+                subtitle: 'to continue to FlowLab',
+              },
+            },
+            signUp: {
+              start: {
+                title: 'Create your FlowLab account',
+                subtitle: 'Welcome! Please fill in the details to get started',
+              },
+            },
+            userProfile: {
+              start: {
+                headerTitle__account: 'FlowLab Account',
+              },
+            },
+          }}
         >
           <ThemeProvider
             attribute="class"

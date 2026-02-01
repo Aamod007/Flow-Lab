@@ -87,6 +87,13 @@ export type EditorCanvasTypes =
   | 'Trigger'
   | 'Action'
   | 'Wait'
+  | 'Agent'
+  | 'Research Agent'
+  | 'Coder Agent'
+  | 'Analyst Agent'
+  | 'Writer Agent'
+  | 'Reviewer Agent'
+  | 'Coordinator Agent'
 
 export type EditorCanvasCardType = {
   title: string
@@ -142,4 +149,11 @@ export const nodeMapper: Record<string, string> = {
   Discord: 'discordNode',
   'Google Drive': 'googleNode',
   AI: 'aiNode',
+  Agent: 'agentNode',
+  'Research Agent': 'agentNode',
+  'Coder Agent': 'agentNode',
+  'Analyst Agent': 'agentNode',
+  'Writer Agent': 'agentNode',
+  'Reviewer Agent': 'agentNode',
+  'Coordinator Agent': 'agentNode',
 }

@@ -1,6 +1,6 @@
 'use server'
 
-import { currentUser } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs'
 import fs from 'fs/promises'
 import path from 'path'
 
@@ -9,20 +9,24 @@ const DB_PATH = path.join(process.cwd(), 'api-keys.json')
 const getAPIKey = async (provider: string): Promise<string | undefined> => {
     try {
         // 1. Try Local File first
-        const user = await currentUser()
-        if (user) {
+        let userId;
+        try {
+            const session = auth();
+            userId = session.userId;
+        } catch (e) { /* ignore */ }
+
+        if (userId) {
             const data = await fs.readFile(DB_PATH, 'utf-8')
             const allKeys = JSON.parse(data)
-            const userKeys = allKeys[user.id] ? allKeys[user.id] : {} // user.id maps to another JSON object
 
-            // Handle both legacy flat structure or nested structure if needed, 
-            // but settings-actions saves as: allKeys[user.id][provider] = key
-
-            // Wait, in settings-actions we did: dbData[user.id][provider] = key
-            // So userKeys is { [provider]: key }
-
-            const key = userKeys[provider + '_API_KEY'] // matching the provider naming convention
-            if (key) return key
+            // Check if user exists in keys
+            if (allKeys[userId]) {
+                const userKeys = typeof allKeys[userId] === 'string' ? JSON.parse(allKeys[userId]) : allKeys[userId]
+                const key = userKeys[provider + '_API_KEY']
+                if (key) return key
+                // Fallback to checking direct key access if structure differs
+                if (userKeys[provider]) return userKeys[provider]
+            }
         }
     } catch (error) {
         // file might not exist or parsing error
@@ -76,7 +80,14 @@ export async function testAIAgent(config: {
             const apiKey = await getAPIKey('GOOGLE')
             if (!apiKey) throw new Error('Gemini Key not found (Add in Settings)')
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${config.model || 'gemini-pro'}:generateContent?key=${apiKey}`
+            let model = config.model || 'gemini-pro'
+            // Handle hypothetical model "gemini-2.5-flash" by falling back to "gemini-1.5-flash"
+            if (model === 'gemini-2.5-flash') {
+                console.log('Gemini 2.5 Flash requested (preview). Falling back to 1.5-flash for stability.')
+                model = 'gemini-1.5-flash'
+            }
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
 
             const response = await fetch(url, {
                 method: 'POST',

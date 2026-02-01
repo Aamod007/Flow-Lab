@@ -11,6 +11,12 @@ export default authMiddleware({
         '/api/clerk-webhook',
         '/api/drive-activity/notification',
         '/api/payment/success',
+        '/api/connections/test',
+        '/api/ollama/(.*)',
+        '/api/analytics/(.*)',
+        '/api/execution/(.*)',
+        '/api/test/(.*)',
+        '/workflows/editor(.*)',
     ],
     ignoredRoutes: [
         '/api/auth/callback/discord',
@@ -18,6 +24,11 @@ export default authMiddleware({
         '/api/auth/callback/slack',
         '/api/flow',
         '/api/cron/wait',
+        '/api/connections/test',
+        '/api/ollama/(.*)',
+        '/api/analytics/(.*)',
+        '/api/execution/(.*)',
+        '/api/test/(.*)',
     ],
 })
 

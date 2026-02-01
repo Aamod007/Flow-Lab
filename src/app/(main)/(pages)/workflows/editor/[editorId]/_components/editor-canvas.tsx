@@ -29,6 +29,7 @@ import { EditorCanvasDefaultCardTypes } from '@/lib/constant'
 import FlowInstance from './flow-instance'
 import EditorCanvasSidebar from './editor-canvas-sidebar'
 import { onGetNodesEdges } from '../../../_actions/workflow-connections'
+import { onExecuteWorkflow } from '../../../_actions/execute-workflow'
 import { Button } from '@/components/ui/button'
 import { Trash2, Plus, Minus, Maximize, Undo, Redo, Play, Save, FileText, LayoutDashboard } from 'lucide-react'
 import ExecutionDashboard from './execution-dashboard'
@@ -39,6 +40,28 @@ type Props = {}
 const initialNodes: EditorNodeType[] = []
 
 const initialEdges: { id: string; source: string; target: string }[] = []
+
+const nodeTypes = {
+  Action: EditorCanvasCardSingle,
+  Trigger: EditorCanvasCardSingle,
+  Email: EditorCanvasCardSingle,
+  Condition: EditorCanvasCardSingle,
+  AI: EditorCanvasCardSingle,
+  Slack: EditorCanvasCardSingle,
+  'Google Drive': EditorCanvasCardSingle,
+  Notion: EditorCanvasCardSingle,
+  Discord: EditorCanvasCardSingle,
+  'Custom Webhook': EditorCanvasCardSingle,
+  'Google Calendar': EditorCanvasCardSingle,
+  Wait: EditorCanvasCardSingle,
+  Agent: EditorCanvasCardSingle,
+  'Research Agent': EditorCanvasCardSingle,
+  'Coder Agent': EditorCanvasCardSingle,
+  'Analyst Agent': EditorCanvasCardSingle,
+  'Writer Agent': EditorCanvasCardSingle,
+  'Reviewer Agent': EditorCanvasCardSingle,
+  'Coordinator Agent': EditorCanvasCardSingle,
+}
 
 const EditorCanvas = (props: Props) => {
   const { dispatch, state } = useEditor()
@@ -105,6 +128,21 @@ const EditorCanvas = (props: Props) => {
         y: event.clientY,
       })
 
+      // Initialize metadata with sensible defaults based on node type
+      let initialMetadata: Record<string, any> = {}
+      
+      // AI nodes and Agent nodes get default AI configuration
+      if (type === 'AI' || type.includes('Agent')) {
+        initialMetadata = {
+          provider: 'Groq',                        // Free provider
+          model: 'llama-3.1-70b-versatile',       // Free, high-quality model
+          prompt: '',
+          systemPrompt: 'You are a helpful assistant.',
+          temperature: 0.7,
+          maxTokens: 1000,
+        }
+      }
+
       const newNode = {
         id: v4(),
         type,
@@ -114,7 +152,7 @@ const EditorCanvas = (props: Props) => {
           description: EditorCanvasDefaultCardTypes[type].description,
           completed: false,
           current: false,
-          metadata: {},
+          metadata: initialMetadata,
           type: type,
         },
       }
@@ -149,23 +187,7 @@ const EditorCanvas = (props: Props) => {
     dispatch({ type: 'LOAD_DATA', payload: { edges, elements: nodes } })
   }, [nodes, edges, dispatch])
 
-  const nodeTypes = useMemo(
-    () => ({
-      Action: EditorCanvasCardSingle,
-      Trigger: EditorCanvasCardSingle,
-      Email: EditorCanvasCardSingle,
-      Condition: EditorCanvasCardSingle,
-      AI: EditorCanvasCardSingle,
-      Slack: EditorCanvasCardSingle,
-      'Google Drive': EditorCanvasCardSingle,
-      Notion: EditorCanvasCardSingle,
-      Discord: EditorCanvasCardSingle,
-      'Custom Webhook': EditorCanvasCardSingle,
-      'Google Calendar': EditorCanvasCardSingle,
-      Wait: EditorCanvasCardSingle,
-    }),
-    []
-  )
+
 
   const LOCAL_STORAGE_PREFIX = 'workflow_backup_'
   const workflowId = pathname.split('/').pop()!
@@ -356,16 +378,25 @@ const EditorCanvas = (props: Props) => {
                         <Button
                           size="sm"
                           className="h-8 rounded-full bg-green-600 hover:bg-green-700 text-white gap-2 px-4 shadow-green-500/20 shadow-lg"
-                          onClick={() => {
+                          onClick={async () => {
                             setIsDashboardOpen(true)
-                            toast.promise(
-                              new Promise((resolve) => setTimeout(resolve, 2000)),
-                              {
-                                loading: 'Executing workflow...',
-                                success: 'Workflow executed successfully! (Mock)',
-                                error: 'Execution failed',
+                            toast.loading('Executing workflow...')
+                            try {
+                              // @ts-ignore
+                              const result = await onExecuteWorkflow(JSON.stringify(state.editor.elements), JSON.stringify(edges))
+                              if (result.success) {
+                                toast.dismiss()
+                                toast.success('Workflow executed successfully!')
+                                // Optional: Show logs
+                                console.log(result.logs)
+                              } else {
+                                toast.dismiss()
+                                toast.error('Execution Failed: ' + result.message)
                               }
-                            )
+                            } catch (e: any) {
+                              toast.dismiss()
+                              toast.error('Error: ' + e.message)
+                            }
                           }}
                         >
                           <Play className="w-4 h-4 fill-current" />
@@ -513,7 +544,7 @@ const EditorCanvas = (props: Props) => {
       </ResizablePanel>
       <ResizableHandle />
       <ResizablePanel
-        defaultSize={40}
+        defaultSize={30}
         className="relative sm:block"
       >
         {isWorkFlowLoading ? (

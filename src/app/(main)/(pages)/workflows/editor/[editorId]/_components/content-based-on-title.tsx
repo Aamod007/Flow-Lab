@@ -74,8 +74,156 @@ const ContentBasedOnTitle = ({
     }
   }, [title, setFile])
 
+  // Handle nodes that don't require connections (Trigger, Action, Wait, Condition)
+  const genericNodeTypes = ['Trigger', 'Action', 'Wait', 'Condition', 'Email']
+  const isGenericNode = genericNodeTypes.includes(title)
+
   // @ts-ignore
   const nodeConnectionType: any = nodeConnection[nodeMapper[title]]
+  
+  // For generic nodes, show their configuration without connection check
+  if (isGenericNode) {
+    return (
+      <AccordionContent>
+        <Card>
+          <div className="flex flex-col gap-3 px-6 py-3 pb-20">
+            {title === 'Trigger' && (
+              <>
+                <h4 className="text-sm font-medium">Trigger Configuration</h4>
+                <p className="text-xs text-muted-foreground">
+                  This node starts your workflow. Configure when it should trigger.
+                </p>
+                <Card className="bg-muted/30">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium">Trigger Type</label>
+                      <select className="w-full px-3 py-2 text-sm border rounded-md bg-background">
+                        <option>Manual</option>
+                        <option>Schedule (Cron)</option>
+                        <option>Webhook</option>
+                        <option>Event</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium">Description</label>
+                      <Input placeholder="Describe what triggers this workflow..." />
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+            
+            {title === 'Action' && (
+              <>
+                <h4 className="text-sm font-medium">Action Configuration</h4>
+                <p className="text-xs text-muted-foreground">
+                  Configure what this action node does.
+                </p>
+                <Card className="bg-muted/30">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium">Action Type</label>
+                      <select className="w-full px-3 py-2 text-sm border rounded-md bg-background">
+                        <option>HTTP Request</option>
+                        <option>Transform Data</option>
+                        <option>Filter</option>
+                        <option>Aggregate</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium">Input</label>
+                      <Input placeholder="{{previous.output}}" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+            
+            {title === 'Condition' && (
+              <>
+                <h4 className="text-sm font-medium">Condition Configuration</h4>
+                <p className="text-xs text-muted-foreground">
+                  Define conditions to branch your workflow.
+                </p>
+                <Card className="bg-muted/30">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium">If</label>
+                      <Input placeholder="{{ai.response}}" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium">Operator</label>
+                      <select className="w-full px-3 py-2 text-sm border rounded-md bg-background">
+                        <option>Contains</option>
+                        <option>Equals</option>
+                        <option>Greater Than</option>
+                        <option>Less Than</option>
+                        <option>Is Empty</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium">Value</label>
+                      <Input placeholder="Enter comparison value..." />
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+            
+            {title === 'Wait' && (
+              <>
+                <h4 className="text-sm font-medium">Wait Configuration</h4>
+                <p className="text-xs text-muted-foreground">
+                  Pause workflow execution for a specified time.
+                </p>
+                <Card className="bg-muted/30">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium">Duration</label>
+                      <div className="flex gap-2">
+                        <Input type="number" placeholder="5" className="w-20" />
+                        <select className="px-3 py-2 text-sm border rounded-md bg-background">
+                          <option>Seconds</option>
+                          <option>Minutes</option>
+                          <option>Hours</option>
+                        </select>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+            
+            {title === 'Email' && (
+              <>
+                <h4 className="text-sm font-medium">Email Configuration</h4>
+                <p className="text-xs text-muted-foreground">
+                  Configure email sending or receiving.
+                </p>
+                <Card className="bg-muted/30">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium">To</label>
+                      <Input placeholder="recipient@example.com" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium">Subject</label>
+                      <Input placeholder="Email subject..." />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium">Body</label>
+                      <Input placeholder="{{ai.response}}" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+          </div>
+        </Card>
+      </AccordionContent>
+    )
+  }
+
   if (!nodeConnectionType) return <p>Not connected</p>
 
   const isConnected =
@@ -106,10 +254,45 @@ const ContentBasedOnTitle = ({
           </CardHeader>
         )}
 
-        {/* AI Agent Configuration */}
+        {/* AI Agent Output - Shows test results and output preview */}
         {title === 'AI' && (
-          <div className="px-6 py-3 pb-20">
-            <AIConfigurationForm nodeConnection={nodeConnection} />
+          <div className="px-6 py-3 pb-20 space-y-4">
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium text-muted-foreground">Output Preview</h4>
+              <Card className="bg-muted/30">
+                <CardContent className="p-4">
+                  <p className="text-xs text-muted-foreground mb-2">The AI agent will output its response here when executed.</p>
+                  <div className="p-3 rounded-md bg-background border border-dashed border-border">
+                    <p className="text-sm text-muted-foreground italic">Run the workflow to see agent output...</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium text-muted-foreground">Output Variables</h4>
+              <Card className="bg-muted/30">
+                <CardContent className="p-4 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <code className="px-2 py-1 bg-background rounded">{'{{ai.response}}'}</code>
+                    <span className="text-muted-foreground">Full AI response text</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <code className="px-2 py-1 bg-background rounded">{'{{ai.tokens}}'}</code>
+                    <span className="text-muted-foreground">Tokens used</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <code className="px-2 py-1 bg-background rounded">{'{{ai.cost}}'}</code>
+                    <span className="text-muted-foreground">Cost incurred</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium text-muted-foreground">Pass to Next Node</h4>
+              <p className="text-xs text-muted-foreground">Connect this AI node's output to other nodes in your workflow.</p>
+            </div>
           </div>
         )}
 

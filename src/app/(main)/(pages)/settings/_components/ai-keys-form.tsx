@@ -26,6 +26,7 @@ import {
     Server
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { saveAPIKey } from '../_actions/settings-actions'
 
 // Provider configurations
 const AI_PROVIDERS = [
@@ -37,7 +38,7 @@ const AI_PROVIDERS = [
         color: 'from-blue-500 to-cyan-500',
         bgColor: 'bg-blue-500/10',
         borderColor: 'border-blue-500/30',
-        models: ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash'],
+        models: ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.0-pro'],
         pricing: 'Free tier: 60 req/min',
         keyPrefix: 'AIza',
         placeholder: 'AIzaSy...',
@@ -180,9 +181,6 @@ const AiKeysForm = () => {
         }))
 
         try {
-            // Simulate API test - In production, this would make an actual API call
-            await new Promise(resolve => setTimeout(resolve, 1500))
-
             // For local Ollama, check if it's running
             if (provider.isLocal) {
                 const ollamaUrl = key || 'http://localhost:11434'
@@ -196,7 +194,7 @@ const AiKeysForm = () => {
                 }
             }
 
-            // Mock success based on key format validation
+            // Key format validation (instant)
             if (!provider.isLocal && provider.keyPrefix && !key.startsWith(provider.keyPrefix)) {
                 throw new Error(`Invalid key format. Expected key to start with "${provider.keyPrefix}"`)
             }
@@ -227,11 +225,29 @@ const AiKeysForm = () => {
         }
     }
 
-    const saveApiKeys = (providerId: string, value: string) => {
+    const saveApiKeys = async (providerId: string, value: string) => {
+        // Save to LocalStorage
         const savedKeys = localStorage.getItem('flowlab_api_keys')
         const keys = savedKeys ? JSON.parse(savedKeys) : {}
         keys[providerId] = value
         localStorage.setItem('flowlab_api_keys', JSON.stringify(keys))
+
+        // Save to Server (api-keys.json)
+        // Map provider IDs to the keys expected by ai-actions.ts (e.g. GOOGLE_API_KEY)
+        let backendKey = ''
+        switch (providerId) {
+            case 'gemini': backendKey = 'GOOGLE_API_KEY'; break;
+            case 'openai': backendKey = 'OPENAI_API_KEY'; break;
+            case 'groq': backendKey = 'GROQ_API_KEY'; break;
+            case 'anthropic': backendKey = 'ANTHROPIC_API_KEY'; break;
+            default: backendKey = `${providerId.toUpperCase()}_API_KEY`;
+        }
+
+        try {
+            await saveAPIKey(backendKey, value)
+        } catch (err) {
+            console.error('Failed to sync key to server', err)
+        }
     }
 
     const handleModelChange = (providerId: string, model: string) => {

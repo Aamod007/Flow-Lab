@@ -142,6 +142,12 @@ const FlowInstance = ({ children, edges, nodes }: Props) => {
         JSON.stringify(isFlow)
       )
 
+      // Handle case where response might be undefined
+      if (!response) {
+        toast.error('Failed to save workflow - no response received')
+        return { success: false }
+      }
+
       if (response.success) {
         setLastSaved(new Date())
         setHasUnsavedChanges(false)
@@ -217,7 +223,7 @@ const FlowInstance = ({ children, edges, nodes }: Props) => {
       // First save the workflow
       const saveResult = await onFlowAutomation(false)
 
-      if (!saveResult.success) {
+      if (!saveResult?.success) {
         toast.error('Please save the workflow first before publishing')
         setIsPublishing(false)
         return
@@ -225,6 +231,11 @@ const FlowInstance = ({ children, edges, nodes }: Props) => {
 
       // Then publish it
       const response = await onFlowPublish(workflowId, !isPublished)
+
+      if (!response) {
+        toast.error('Failed to update publish status - no response received')
+        return
+      }
 
       if (response.success) {
         setIsPublished(response.published ?? false)

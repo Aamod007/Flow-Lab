@@ -168,6 +168,11 @@ model ExecutionLog {
   input       String?   // JSON
   output      String?   // JSON
   error       String?
+  // AgentFlow additions
+  events      String?   // JSON array of ExecutionEvent objects
+  reasoning   String?   // JSON array of AI reasoning steps
+  nodeResults String?   // JSON map of nodeId -> result
+  metrics     String?   // JSON with tokens, costs, timing per node
 }
 
 model CostTracking {
@@ -179,6 +184,12 @@ model CostTracking {
   limit       Float?
   alertsSent  Boolean  @default(false)
   breakdown   String?  // JSON
+  // AgentFlow additions
+  budget        Float?   @default(50.0)  // Monthly budget in USD
+  warnThreshold Float?   @default(0.7)   // Warning at 70% 
+  critThreshold Float?   @default(0.9)   // Critical at 90%
+  emailAlerts   Boolean  @default(true)
+  slackAlerts   Boolean  @default(false)
   
   @@unique([userId, month])
 }
@@ -192,6 +203,28 @@ model OllamaModel {
   specs       String?   // JSON
   userId      String
   User        User      @relation(fields: [userId], references: [clerkId])
+  // AgentFlow additions
+  benchmarks  String?   // JSON with speed/quality benchmarks
+  tokensUsed  Int?      @default(0)
+  avgLatency  Float?    // milliseconds per token
+  
+  @@unique([userId, name])
+}
 
+// New model for storing AI agent configurations
+model AIAgentConfig {
+  id          String   @id @default(uuid())
+  name        String
+  provider    String
+  model       String
+  systemPrompt String?
+  temperature Float    @default(0.7)
+  maxTokens   Int      @default(1000)
+  config      String?  // JSON for additional settings
+  userId      String
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
   @@unique([userId, name])
 }

@@ -13,6 +13,13 @@ import {
     Timer,
     Webhook,
     Zap,
+    Bot,
+    Search,
+    Code,
+    BarChart3,
+    PenTool,
+    CheckSquare,
+    Network,
 } from 'lucide-react'
 import { EditorCanvasTypes } from '@/lib/types'
 
@@ -93,6 +100,55 @@ const EditorCanvasIconHelper = ({ type }: Props) => {
         case 'Wait':
             return (
                 <Timer
+                    className="flex-shrink-0"
+                    size={30}
+                />
+            )
+        case 'Agent':
+            return (
+                <Bot
+                    className="flex-shrink-0"
+                    size={30}
+                />
+            )
+        case 'Research Agent':
+            return (
+                <Search
+                    className="flex-shrink-0"
+                    size={30}
+                />
+            )
+        case 'Coder Agent':
+            return (
+                <Code
+                    className="flex-shrink-0"
+                    size={30}
+                />
+            )
+        case 'Analyst Agent':
+            return (
+                <BarChart3
+                    className="flex-shrink-0"
+                    size={30}
+                />
+            )
+        case 'Writer Agent':
+            return (
+                <PenTool
+                    className="flex-shrink-0"
+                    size={30}
+                />
+            )
+        case 'Reviewer Agent':
+            return (
+                <CheckSquare
+                    className="flex-shrink-0"
+                    size={30}
+                />
+            )
+        case 'Coordinator Agent':
+            return (
+                <Network
                     className="flex-shrink-0"
                     size={30}
                 />

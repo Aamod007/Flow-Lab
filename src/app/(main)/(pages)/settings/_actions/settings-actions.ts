@@ -1,6 +1,6 @@
 'use server'
 
-import { currentUser } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs'
 import fs from 'fs/promises'
 import path from 'path'
 
@@ -20,25 +20,15 @@ async function writeKeysToFile(keys: Record<string, string>) {
 }
 
 export async function saveAPIKey(provider: string, key: string) {
-    const user = await currentUser()
-    if (!user) return { success: false, message: 'Unauthorized' }
+    const { userId } = auth()
+
+    if (!userId) return { success: false, message: 'Unauthorized' }
 
     try {
-        const allKeys = await readKeysFromFile()
-        // Initialize user object if not exists
-        const userKeys = allKeys[user.id] ? JSON.parse(allKeys[user.id]) : {}
-
-        userKeys[provider] = key
-        // Store back as stringified JSON because our flat file structure is simpler as Record<UserId, StringifiedKeys>
-        // Or we can just do a nested object. Let's do Record<UserId, Record<Provider, Key>> directly.
-
-        // Re-read strategy:
-        // readKeysFromFile returns the whole JSON.
-        // Let's coerce it to Record<string, any>
         const dbData: any = await readKeysFromFile()
 
-        if (!dbData[user.id]) dbData[user.id] = {}
-        dbData[user.id][provider] = key
+        if (!dbData[userId]) dbData[userId] = {}
+        dbData[userId][provider] = key
 
         await writeKeysToFile(dbData)
 
@@ -50,12 +40,12 @@ export async function saveAPIKey(provider: string, key: string) {
 }
 
 export async function getAPIKeys() {
-    const user = await currentUser()
-    if (!user) return {}
+    const { userId } = auth()
+    if (!userId) return {}
 
     try {
         const dbData: any = await readKeysFromFile()
-        return dbData[user.id] || {}
+        return dbData[userId] || {}
     } catch (error) {
         return {}
     }

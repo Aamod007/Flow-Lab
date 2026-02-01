@@ -23,9 +23,6 @@ export const onCRMConnect = async (
 ): Promise<ServiceConnectionStatus> => {
     console.log(`Attempting to connect to ${provider}...`)
 
-    // Simulate API latency
-    await new Promise(resolve => setTimeout(resolve, 1500))
-
     // Mock validation
     if (!apiKey.startsWith(provider.toLowerCase().substring(0, 3))) {
         // In a real app, we would validate against the provider's API

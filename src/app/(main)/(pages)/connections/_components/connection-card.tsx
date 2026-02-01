@@ -1,12 +1,9 @@
 'use client'
 
 import { ConnectionTypes } from '@/lib/types'
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import {
   Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -15,7 +12,8 @@ import {
   CheckCircle2,
   ExternalLink,
   Loader2,
-  Unlink
+  Zap,
+  TestTube,
 } from 'lucide-react'
 import {
   Dialog,
@@ -27,12 +25,12 @@ import {
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
-import { useRouter } from 'next/navigation'
 
 type ConnectionStatus = {
   connected: boolean
   connectedAt?: string
   accountName?: string
+  testData?: any
 }
 
 type Props = {
@@ -57,13 +55,62 @@ const ConnectionCard = ({
   isLoading = false,
 }: Props) => {
   const [isConnecting, setIsConnecting] = useState(false)
+  const [isTesting, setIsTesting] = useState(false)
   const [showDisconnectDialog, setShowDisconnectDialog] = useState(false)
-  const router = useRouter()
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string; data?: any } | null>(null)
 
   const isConnected = connectionStatus?.connected || false
 
+  // Test connection using API for Notion and Slack
+  const handleTestConnection = async () => {
+    setIsTesting(true)
+    setTestResult(null)
+
+    try {
+      let provider = ''
+      if (title === 'Notion') provider = 'notion'
+      else if (title === 'Slack') provider = 'slack'
+      else {
+        // For other providers, just mock success
+        setTestResult({ success: true, message: `${title} connection simulated` })
+        setIsTesting(false)
+        onConnect()
+        toast.success(`${title} connected successfully!`)
+        return
+      }
+
+      const response = await fetch(`/api/connections/test?provider=${provider}&action=test`)
+      const result = await response.json()
+
+      setTestResult(result)
+
+      if (result.success) {
+        onConnect()
+        toast.success(result.message, {
+          description: result.data?.teamName || result.data?.workspace || undefined,
+        })
+      } else {
+        toast.error('Connection failed', {
+          description: result.message,
+        })
+      }
+    } catch (error: any) {
+      setTestResult({ success: false, message: error.message })
+      toast.error('Test failed', { description: error.message })
+    } finally {
+      setIsTesting(false)
+    }
+  }
+
   const handleConnect = async () => {
     setIsConnecting(true)
+
+    // For Notion and Slack, use direct API test instead of OAuth popup
+    if (title === 'Notion' || title === 'Slack') {
+      await handleTestConnection()
+      setIsConnecting(false)
+      return
+    }
 
     // Determine correct provider slug for the API route
     const providerSlug = title.toLowerCase().replace(/\s+/g, '-')
@@ -81,13 +128,11 @@ const ConnectionCard = ({
       `width=${width},height=${height},left=${left},top=${top}`
     )
 
-    // Poll to see if popup is closed (fallback if message passing fails)
+    // Poll to see if popup is closed
     const checkTimer = setInterval(() => {
       if (popup?.closed) {
         clearInterval(checkTimer)
         setIsConnecting(false)
-        // We'll let the message listener handle the actual success state
-        // But if they just closed it without logging in, we stop the spinner
       }
     }, 1000)
 
@@ -96,7 +141,7 @@ const ConnectionCard = ({
       if (event.data?.type === 'OAUTH_SUCCESS' && event.data?.provider === providerSlug) {
         clearInterval(checkTimer)
         setIsConnecting(false)
-        onConnect() // Update parent state
+        onConnect()
         toast.success(`Successfully connected to ${title}`)
       }
     }
@@ -113,6 +158,7 @@ const ConnectionCard = ({
 
   const handleDisconnect = () => {
     setShowDisconnectDialog(false)
+    setTestResult(null)
     onDisconnect()
   }
 
@@ -126,6 +172,9 @@ const ConnectionCard = ({
       default: return '#'
     }
   }
+
+  // Check if this is a testable connection (has API keys in env)
+  const isTestable = title === 'Notion' || title === 'Slack'
 
   if (isLoading) {
     return (
@@ -151,13 +200,13 @@ const ConnectionCard = ({
       )}>
         <div className="p-4">
           {/* Header Row */}
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-7 h-7 rounded bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden relative">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-8 h-8 rounded bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden relative">
               <Image
                 src={icon}
                 alt={title}
-                height={28}
-                width={28}
+                height={32}
+                width={32}
                 className="object-contain"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none'
@@ -173,19 +222,67 @@ const ConnectionCard = ({
                 {isConnected && (
                   <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
                 )}
+                {isTestable && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-blue-500/10 text-blue-500 border-blue-500/30">
+                    API Ready
+                  </Badge>
+                )}
               </div>
               <p className="text-xs text-muted-foreground truncate">{description}</p>
             </div>
           </div>
 
+          {/* Test Result */}
+          {testResult && (
+            <div className={cn(
+              "text-xs p-2 rounded mb-3",
+              testResult.success ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-600"
+            )}>
+              {testResult.success ? (
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-3 w-3" />
+                  <span>{testResult.message}</span>
+                  {testResult.data && (
+                    <span className="text-muted-foreground ml-1">
+                      ({testResult.data.teamName || testResult.data.workspace || testResult.data.botName})
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <span>{testResult.message}</span>
+              )}
+            </div>
+          )}
+
           {/* Actions Row */}
           <div className="flex items-center gap-2">
             {isConnected ? (
               <>
+                {isTestable && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 h-8 text-xs gap-1"
+                    onClick={handleTestConnection}
+                    disabled={isTesting}
+                  >
+                    {isTesting ? (
+                      <>
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Testing...
+                      </>
+                    ) : (
+                      <>
+                        <TestTube className="h-3 w-3" />
+                        Re-test
+                      </>
+                    )}
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1 h-8 text-xs"
+                  className="flex-1 h-8 text-xs text-red-500 hover:text-red-600 hover:bg-red-500/10"
                   onClick={() => setShowDisconnectDialog(true)}
                 >
                   Disconnect
@@ -194,19 +291,25 @@ const ConnectionCard = ({
             ) : (
               <>
                 <Button
-                  variant="outline"
+                  variant={isTestable ? "default" : "outline"}
                   size="sm"
-                  className="flex-1 h-8 text-xs"
+                  className={cn(
+                    "flex-1 h-8 text-xs gap-1",
+                    isTestable && "bg-primary hover:bg-primary/90"
+                  )}
                   onClick={handleConnect}
-                  disabled={isConnecting}
+                  disabled={isConnecting || isTesting}
                 >
-                  {isConnecting ? (
+                  {isConnecting || isTesting ? (
                     <>
-                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                      Connecting...
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      {isTestable ? 'Testing...' : 'Connecting...'}
                     </>
                   ) : (
-                    'Connect'
+                    <>
+                      {isTestable ? <Zap className="h-3 w-3" /> : null}
+                      {isTestable ? 'Test & Connect' : 'Connect'}
+                    </>
                   )}
                 </Button>
                 <Button

@@ -145,43 +145,38 @@ export const EditorCanvasDefaultCardTypes = {
     description: 'Delay the next action step by using the wait timer.',
     type: 'Action',
   },
+  Agent: {
+    description: 'Add a custom AI agent to your workflow.',
+    type: 'Action',
+  },
+  'Research Agent': {
+    description: 'Searches the web, gathers information, and compiles research.',
+    type: 'Action',
+  },
+  'Coder Agent': {
+    description: 'Writes, reviews, and debugs code across multiple languages.',
+    type: 'Action',
+  },
+  'Analyst Agent': {
+    description: 'Analyzes data, identifies patterns, and generates insights.',
+    type: 'Action',
+  },
+  'Writer Agent': {
+    description: 'Creates content, reports, and documentation.',
+    type: 'Action',
+  },
+  'Reviewer Agent': {
+    description: 'Reviews work, provides feedback, and ensures quality.',
+    type: 'Action',
+  },
+  'Coordinator Agent': {
+    description: 'Orchestrates other agents and manages workflow execution.',
+    type: 'Action',
+  },
 }
 
 export const CONNECTIONS: Connection[] = [
-  // Google Services
-  {
-    title: 'Google Drive',
-    description: 'Connect your Google Drive to listen to folder changes',
-    image: '/googleDrive.png',
-    connectionKey: 'googleNode',
-    alwaysTrue: true,
-  },
-  {
-    title: 'Gmail',
-    description: 'Send and receive emails, automate email workflows',
-    image: '/gmail.png',
-    connectionKey: 'googleNode',
-  },
-  {
-    title: 'Google Sheets',
-    description: 'Read, write and update spreadsheet data',
-    image: '/googleSheets.png',
-    connectionKey: 'googleNode',
-  },
-  {
-    title: 'Google Calendar',
-    description: 'Create and manage calendar events',
-    image: '/googleCalendar.png',
-    connectionKey: 'googleNode',
-  },
-  // Communication
-  {
-    title: 'Discord',
-    description: 'Send notifications and messages to Discord',
-    image: '/discord.png',
-    connectionKey: 'discordNode',
-    accessTokenKey: 'webhookURL',
-  },
+  // Communication - With API keys configured
   {
     title: 'Slack',
     description: 'Send notifications to team members through Slack',
@@ -191,274 +186,26 @@ export const CONNECTIONS: Connection[] = [
     slackSpecial: true,
   },
   {
-    title: 'Microsoft Teams',
-    description: 'Send messages and notifications to Teams channels',
-    image: '/teams.png',
-    connectionKey: 'slackNode',
-  },
-  {
-    title: 'Telegram',
-    description: 'Send messages via Telegram Bot API',
-    image: '/telegram.png',
-    connectionKey: 'discordNode',
-  },
-  {
-    title: 'WhatsApp',
-    description: 'Send WhatsApp messages through Business API',
-    image: '/whatsapp.png',
-    connectionKey: 'discordNode',
-  },
-  // Productivity
-  {
     title: 'Notion',
     description: 'Create entries in your Notion dashboard',
     image: '/notion.png',
     connectionKey: 'notionNode',
     accessTokenKey: 'accessToken',
   },
+  // Available connections
   {
-    title: 'Airtable',
-    description: 'Manage Airtable bases, tables and records',
-    image: '/airtable.png',
-    connectionKey: 'notionNode',
-  },
-  {
-    title: 'Trello',
-    description: 'Create and manage Trello boards and cards',
-    image: '/trello.png',
-    connectionKey: 'notionNode',
-  },
-  {
-    title: 'Asana',
-    description: 'Manage Asana projects and tasks',
-    image: '/asana.png',
-    connectionKey: 'notionNode',
-  },
-  {
-    title: 'Jira',
-    description: 'Create and update Jira issues and projects',
-    image: '/jira.png',
-    connectionKey: 'notionNode',
-  },
-  {
-    title: 'Linear',
-    description: 'Manage Linear issues and projects',
-    image: '/linear.png',
-    connectionKey: 'notionNode',
-  },
-  {
-    title: 'Monday.com',
-    description: 'Manage Monday.com boards and items',
-    image: '/monday.png',
-    connectionKey: 'notionNode',
-  },
-  // Development
-  {
-    title: 'GitHub',
-    description: 'Manage repositories, issues, and pull requests',
-    image: '/github.png',
-    connectionKey: 'notionNode',
-  },
-  {
-    title: 'GitLab',
-    description: 'Manage GitLab projects and pipelines',
-    image: '/gitlab.png',
-    connectionKey: 'notionNode',
-  },
-  // AI Services
-  {
-    title: 'OpenAI',
-    description: 'Use GPT models for text generation and analysis',
-    image: '/openai.png',
-    connectionKey: 'notionNode',
-  },
-  {
-    title: 'Anthropic',
-    description: 'Use Claude AI for advanced text processing',
-    image: '/anthropic.png',
-    connectionKey: 'notionNode',
-  },
-  {
-    title: 'Google Gemini',
-    description: 'Use Google\'s advanced multimodal AI models',
-    image: '/gemini.png',
-    connectionKey: 'notionNode',
-  },
-  {
-    title: 'Ollama',
-    description: 'Run open-source LLMs locally on your machine',
-    image: '/ollama.png',
-    connectionKey: 'notionNode',
-  },
-  {
-    title: 'Groq',
-    description: 'Ultra-fast AI inference for real-time applications',
-    image: '/groq.png',
-    connectionKey: 'notionNode',
-  },
-  // CRM & Marketing
-  {
-    title: 'Salesforce',
-    description: 'Manage Salesforce leads, contacts and opportunities',
-    image: '/salesforce.png',
-    connectionKey: 'notionNode',
-  },
-  {
-    title: 'HubSpot',
-    description: 'Manage HubSpot CRM contacts and deals',
-    image: '/hubspot.png',
-    connectionKey: 'notionNode',
-  },
-  {
-    title: 'Mailchimp',
-    description: 'Manage email campaigns and subscribers',
-    image: '/mailchimp.png',
-    connectionKey: 'notionNode',
-  },
-  {
-    title: 'SendGrid',
-    description: 'Send transactional and marketing emails',
-    image: '/sendgrid.png',
-    connectionKey: 'notionNode',
-  },
-  // E-commerce & Payments
-  {
-    title: 'Stripe',
-    description: 'Process payments and manage subscriptions',
-    image: '/stripe.png',
-    connectionKey: 'notionNode',
-  },
-  {
-    title: 'PayPal',
-    description: 'Process PayPal payments and transactions',
-    image: '/paypal.png',
-    connectionKey: 'notionNode',
-  },
-  {
-    title: 'Shopify',
-    description: 'Manage Shopify store orders and products',
-    image: '/shopify.png',
-    connectionKey: 'notionNode',
-  },
-  // Social Media
-  {
-    title: 'Twitter',
-    description: 'Post tweets and monitor Twitter activity',
-    image: '/twitter.png',
+    title: 'Discord',
+    description: 'Send notifications and messages to Discord',
+    image: '/discord.png',
     connectionKey: 'discordNode',
+    accessTokenKey: 'webhookURL',
   },
   {
-    title: 'LinkedIn',
-    description: 'Post updates and manage LinkedIn presence',
-    image: '/linkedin.png',
-    connectionKey: 'discordNode',
-  },
-  {
-    title: 'Facebook',
-    description: 'Manage Facebook pages and posts',
-    image: '/facebook.png',
-    connectionKey: 'discordNode',
-  },
-  {
-    title: 'Instagram',
-    description: 'Post content and manage Instagram account',
-    image: '/instagram.png',
-    connectionKey: 'discordNode',
-  },
-  // Cloud Storage
-  {
-    title: 'Dropbox',
-    description: 'Manage files and folders in Dropbox',
-    image: '/dropbox.png',
+    title: 'Google Drive',
+    description: 'Connect your Google Drive to listen to folder changes',
+    image: '/googleDrive.png',
     connectionKey: 'googleNode',
-  },
-  {
-    title: 'OneDrive',
-    description: 'Manage files in Microsoft OneDrive',
-    image: '/onedrive.png',
-    connectionKey: 'googleNode',
-  },
-  {
-    title: 'AWS S3',
-    description: 'Store and retrieve files from S3 buckets',
-    image: '/aws.png',
-    connectionKey: 'googleNode',
-  },
-  // Databases
-  {
-    title: 'PostgreSQL',
-    description: 'Query and update PostgreSQL databases',
-    image: '/postgresql.png',
-    connectionKey: 'notionNode',
-  },
-  {
-    title: 'MySQL',
-    description: 'Query and update MySQL databases',
-    image: '/mysql.png',
-    connectionKey: 'notionNode',
-  },
-  {
-    title: 'MongoDB',
-    description: 'Manage MongoDB collections and documents',
-    image: '/mongodb.png',
-    connectionKey: 'notionNode',
-  },
-  {
-    title: 'Supabase',
-    description: 'Interact with Supabase database and auth',
-    image: '/supabase.png',
-    connectionKey: 'notionNode',
-  },
-  {
-    title: 'Firebase',
-    description: 'Manage Firebase Firestore and Realtime DB',
-    image: '/firebase.png',
-    connectionKey: 'notionNode',
-  },
-  // Meetings & Scheduling
-  {
-    title: 'Zoom',
-    description: 'Create and manage Zoom meetings',
-    image: '/zoom.png',
-    connectionKey: 'notionNode',
-  },
-  {
-    title: 'Calendly',
-    description: 'Manage Calendly events and scheduling',
-    image: '/calendly.png',
-    connectionKey: 'notionNode',
-  },
-  // Forms
-  {
-    title: 'Typeform',
-    description: 'Collect and process Typeform responses',
-    image: '/typeform.png',
-    connectionKey: 'notionNode',
-  },
-  {
-    title: 'Google Forms',
-    description: 'Collect and process form responses',
-    image: '/googleForms.png',
-    connectionKey: 'googleNode',
-  },
-  // Communication
-  {
-    title: 'Twilio',
-    description: 'Send SMS and make voice calls',
-    image: '/twilio.png',
-    connectionKey: 'discordNode',
-  },
-  // Developer Tools
-  {
-    title: 'Webhook',
-    description: 'Receive data from any webhook source',
-    image: '/webhook.png',
-    connectionKey: 'notionNode',
-  },
-  {
-    title: 'HTTP Request',
-    description: 'Make HTTP requests to any API',
-    image: '/http.png',
-    connectionKey: 'notionNode',
+    alwaysTrue: true,
   },
 ]
+

@@ -8,7 +8,6 @@ import {
 } from '@/app/(main)/(pages)/connections/_actions/notion-connection'
 import {
   getSlackConnection,
-  listBotChannels,
 } from '@/app/(main)/(pages)/connections/_actions/slack-connection'
 import { Option } from '@/components/ui/multiple-selector'
 
@@ -94,27 +93,31 @@ export const onConnections = async (
   if (editorState.editor.selectedNode.data.title == 'Discord') {
     const connection = await getDiscordConnectionUrl()
     if (connection) {
-      nodeConnection.setDiscordNode({
-        webhookURL: connection.url,
-        content: '',
-        webhookName: connection.name,
-        guildName: connection.guildName,
-      })
+      if (nodeConnection.discordNode.webhookURL !== connection.url) {
+        nodeConnection.setDiscordNode({
+          webhookURL: connection.url,
+          content: '',
+          webhookName: connection.name,
+          guildName: connection.guildName,
+        })
+      }
     }
   }
   if (editorState.editor.selectedNode.data.title == 'Notion') {
     const connection = await getNotionConnection()
     if (connection) {
-      nodeConnection.setNotionNode({
-        accessToken: connection.accessToken,
-        databaseId: connection.databaseId,
-        workspaceName: connection.workspaceName,
-        content: {
-          name: googleFile.name,
-          kind: googleFile.kind,
-          type: googleFile.mimeType,
-        },
-      })
+      if (nodeConnection.notionNode.accessToken !== connection.accessToken) {
+        nodeConnection.setNotionNode({
+          accessToken: connection.accessToken,
+          databaseId: connection.databaseId,
+          workspaceName: connection.workspaceName,
+          content: {
+            name: googleFile.name,
+            kind: googleFile.kind,
+            type: googleFile.mimeType,
+          },
+        })
+      }
 
       if (nodeConnection.notionNode.databaseId !== '') {
         const response = await getNotionDatabase(
@@ -127,17 +130,20 @@ export const onConnections = async (
   if (editorState.editor.selectedNode.data.title == 'Slack') {
     const connection = await getSlackConnection()
     if (connection) {
-      nodeConnection.setSlackNode({
-        appId: connection.appId,
-        authedUserId: connection.authedUserId,
-        authedUserToken: connection.authedUserToken,
-        slackAccessToken: connection.slackAccessToken,
-        botUserId: connection.botUserId,
-        teamId: connection.teamId,
-        teamName: connection.teamName,
-        userId: connection.userId,
-        content: '',
-      })
+      // Prevent infinite loop by checking if state is already set
+      if (nodeConnection.slackNode.slackAccessToken !== connection.slackAccessToken) {
+        nodeConnection.setSlackNode({
+          appId: connection.appId,
+          authedUserId: connection.authedUserId,
+          authedUserToken: connection.authedUserToken,
+          slackAccessToken: connection.slackAccessToken,
+          botUserId: connection.botUserId,
+          teamId: connection.teamId,
+          teamName: connection.teamName,
+          userId: connection.userId,
+          content: '',
+        })
+      }
     }
   }
 }
@@ -146,7 +152,21 @@ export const fetchBotSlackChannels = async (
   token: string,
   setSlackChannels: (slackChannels: Option[]) => void
 ) => {
-  await listBotChannels(token)?.then((channels) => setSlackChannels(channels))
+  try {
+    // Use the API endpoint to fetch channels (works better from client-side)
+    const response = await fetch('/api/connections/test?provider=slack&action=channels')
+    const data = await response.json()
+    
+    if (data.success && data.channels) {
+      setSlackChannels(data.channels)
+    } else {
+      console.warn('Failed to fetch Slack channels:', data.message)
+      setSlackChannels([])
+    }
+  } catch (error) {
+    console.error('Error fetching Slack channels:', error)
+    setSlackChannels([])
+  }
 }
 
 export const onNotionContent = (

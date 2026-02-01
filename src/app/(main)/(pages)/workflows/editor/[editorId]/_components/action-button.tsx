@@ -25,35 +25,47 @@ const ActionButton = ({
   const pathname = usePathname()
 
   const onSendDiscordMessage = useCallback(async () => {
-    const response = await postContentToWebHook(
-      nodeConnection.discordNode.content,
-      nodeConnection.discordNode.webhookURL
-    )
+    try {
+      const response = await postContentToWebHook(
+        nodeConnection.discordNode.content,
+        nodeConnection.discordNode.webhookURL
+      )
 
-    if (response.message == 'success') {
-      nodeConnection.setDiscordNode((prev: any) => ({
-        ...prev,
-        content: '',
-      }))
+      if (response.message == 'success') {
+        nodeConnection.setDiscordNode((prev: any) => ({
+          ...prev,
+          content: '',
+        }))
+        toast.success('Message sent to Discord')
+      } else {
+        toast.error(response.message)
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to send Discord message')
     }
   }, [nodeConnection])
 
   const onStoreNotionContent = useCallback(async () => {
-    console.log(
-      nodeConnection.notionNode.databaseId,
-      nodeConnection.notionNode.accessToken,
-      nodeConnection.notionNode.content
-    )
-    const response = await onCreateNewPageInDatabase(
-      nodeConnection.notionNode.databaseId,
-      nodeConnection.notionNode.accessToken,
-      nodeConnection.notionNode.content
-    )
-    if (response) {
-      nodeConnection.setNotionNode((prev: any) => ({
-        ...prev,
-        content: '',
-      }))
+    try {
+      console.log(
+        nodeConnection.notionNode.databaseId,
+        nodeConnection.notionNode.accessToken,
+        nodeConnection.notionNode.content
+      )
+      const response = await onCreateNewPageInDatabase(
+        nodeConnection.notionNode.databaseId,
+        nodeConnection.notionNode.accessToken,
+        nodeConnection.notionNode.content
+      )
+      if (response) {
+        nodeConnection.setNotionNode((prev: any) => ({
+          ...prev,
+          content: '',
+        }))
+        toast.success('Page created in Notion')
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create Notion page')
     }
   }, [nodeConnection])
 

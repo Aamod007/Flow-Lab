@@ -29,9 +29,10 @@ export const AI_PRICING: Record<string, { input: number; output: number }> = {
     'gpt-3.5-turbo': { input: 0.0015, output: 0.002 },
 
     // Google Gemini (mostly free, but has limits)
+    'gemini-2.5-flash': { input: 0, output: 0 },
+    'gemini-2.0-flash': { input: 0, output: 0 },
     'gemini-1.5-flash': { input: 0, output: 0 },
     'gemini-1.5-pro': { input: 0.00125, output: 0.005 },
-    'gemini-2.0-flash': { input: 0, output: 0 },
 
     // Anthropic Claude
     'claude-3-opus': { input: 0.015, output: 0.075 },
@@ -181,6 +182,14 @@ export const getAIUsageHistory = (limit: number = 50): AIUsageRecord[] => {
     const historyKey = 'flowlab_ai_usage_history'
     const history = JSON.parse(localStorage.getItem(historyKey) || '[]')
     return history.slice(-limit).reverse()
+}
+
+// Alias for cost-optimizer compatibility
+export const getUsageHistory = (): AIUsageRecord[] => {
+    if (typeof window === 'undefined') return []
+
+    const historyKey = 'flowlab_ai_usage_history'
+    return JSON.parse(localStorage.getItem(historyKey) || '[]')
 }
 
 // Reset stats (for testing/debugging)
