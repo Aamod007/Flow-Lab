@@ -1,5 +1,6 @@
-import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
+
+// Mock Clerk webhook handler - no database required for demo mode
 
 export async function POST(req: Request) {
   try {
@@ -7,27 +8,14 @@ export async function POST(req: Request) {
     const { id, email_addresses, first_name, image_url } = body?.data
 
     const email = email_addresses[0]?.email_address
-    console.log('✅', body)
+    console.log('✅ Clerk webhook received:', { id, email, first_name })
 
-    await db.user.upsert({
-      where: { clerkId: id },
-      update: {
-        email,
-        name: first_name,
-        profileImage: image_url,
-      },
-      create: {
-        clerkId: id,
-        email,
-        name: first_name || '',
-        profileImage: image_url || '',
-      },
-    })
-    return new NextResponse('User updated in database successfully', {
+    // Mock response - no database update in demo mode
+    return new NextResponse('User webhook processed successfully', {
       status: 200,
     })
   } catch (error) {
-    console.error('Error updating database:', error)
-    return new NextResponse('Error updating user in database', { status: 500 })
+    console.error('Error processing webhook:', error)
+    return new NextResponse('Error processing webhook', { status: 500 })
   }
 }

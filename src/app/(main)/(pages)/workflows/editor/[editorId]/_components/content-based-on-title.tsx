@@ -18,6 +18,7 @@ import ActionButton from './action-button'
 import { getFileMetaData } from '@/app/(main)/(pages)/connections/_actions/google-connection'
 import axios from 'axios'
 import { toast } from 'sonner'
+import AIConfigurationForm from './ai-configuration-form'
 
 export interface Option {
   value: string
@@ -53,20 +54,25 @@ const ContentBasedOnTitle = ({
   const title = selectedNode.data.title
 
   useEffect(() => {
-    const reqGoogle = async () => {
-      const response: { data: { message: { files: any } } } = await axios.get(
-        '/api/drive'
-      )
-      if (response) {
-        console.log(response.data.message.files[0])
-        toast.message("Fetched File")
-        setFile(response.data.message.files[0])
-      } else {
-        toast.error('Something went wrong')
+    if (title === 'Google Drive') {
+      const reqGoogle = async () => {
+        try {
+          const response: { data: { message: { files: any } } } = await axios.get(
+            '/api/drive'
+          )
+          if (response) {
+            console.log(response.data.message.files[0])
+            toast.message("Fetched File")
+            setFile(response.data.message.files[0])
+          }
+        } catch (error) {
+          console.error(error)
+          // toast.error('Failed to fetch Drive files')
+        }
       }
+      reqGoogle()
     }
-    reqGoogle()
-  }, [])
+  }, [title, setFile])
 
   // @ts-ignore
   const nodeConnectionType: any = nodeConnection[nodeMapper[title]]
@@ -75,16 +81,17 @@ const ContentBasedOnTitle = ({
   const isConnected =
     title === 'Google Drive'
       ? !nodeConnection.isLoading
-      : !!nodeConnectionType[
-          `${
-            title === 'Slack'
-              ? 'slackAccessToken'
-              : title === 'Discord'
-              ? 'webhookURL'
-              : title === 'Notion'
+      : title === 'AI'
+        ? true
+        : !!nodeConnectionType[
+        `${title === 'Slack'
+          ? 'slackAccessToken'
+          : title === 'Discord'
+            ? 'webhookURL'
+            : title === 'Notion'
               ? 'accessToken'
               : ''
-          }`
+        }`
         ]
 
   if (!isConnected) return <p>Not connected</p>
@@ -98,39 +105,50 @@ const ContentBasedOnTitle = ({
             <CardDescription>{nodeConnectionType.guildName}</CardDescription>
           </CardHeader>
         )}
-        <div className="flex flex-col gap-3 px-6 py-3 pb-20">
-          <p>{title === 'Notion' ? 'Values to be stored' : 'Message'}</p>
 
-          <Input
-            type="text"
-            value={nodeConnectionType.content}
-            onChange={(event) => onContentChange(nodeConnection, title, event)}
-          />
+        {/* AI Agent Configuration */}
+        {title === 'AI' && (
+          <div className="px-6 py-3 pb-20">
+            <AIConfigurationForm nodeConnection={nodeConnection} />
+          </div>
+        )}
 
-          {JSON.stringify(file) !== '{}' && title !== 'Google Drive' && (
-            <Card className="w-full">
-              <CardContent className="px-2 py-3">
-                <div className="flex flex-col gap-4">
-                  <CardDescription>Drive File</CardDescription>
-                  <div className="flex flex-wrap gap-2">
-                    <GoogleFileDetails
-                      nodeConnection={nodeConnection}
-                      title={title}
-                      gFile={file}
-                    />
+        {/* Standard Node Configuration */}
+        {title !== 'AI' && (
+          <div className="flex flex-col gap-3 px-6 py-3 pb-20">
+            <p>{title === 'Notion' ? 'Values to be stored' : 'Message'}</p>
+
+            <Input
+              type="text"
+              value={nodeConnectionType.content}
+              onChange={(event) => onContentChange(nodeConnection, title, event)}
+            />
+
+            {JSON.stringify(file) !== '{}' && title !== 'Google Drive' && (
+              <Card className="w-full">
+                <CardContent className="px-2 py-3">
+                  <div className="flex flex-col gap-4">
+                    <CardDescription>Drive File</CardDescription>
+                    <div className="flex flex-wrap gap-2">
+                      <GoogleFileDetails
+                        nodeConnection={nodeConnection}
+                        title={title}
+                        gFile={file}
+                      />
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-          {title === 'Google Drive' && <GoogleDriveFiles />}
-          <ActionButton
-            currentService={title}
-            nodeConnection={nodeConnection}
-            channels={selectedSlackChannels}
-            setChannels={setSelectedSlackChannels}
-          />
-        </div>
+                </CardContent>
+              </Card>
+            )}
+            {title === 'Google Drive' && <GoogleDriveFiles />}
+            <ActionButton
+              currentService={title}
+              nodeConnection={nodeConnection}
+              channels={selectedSlackChannels}
+              setChannels={setSelectedSlackChannels}
+            />
+          </div>
+        )}
       </Card>
     </AccordionContent>
   )

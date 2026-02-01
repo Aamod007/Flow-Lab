@@ -228,7 +228,7 @@ const MultipleSelector = React.forwardRef<
           }
         }
       },
-      [selected]
+      [selected, handleUnselect]
     )
 
     useEffect(() => {
@@ -269,7 +269,7 @@ const MultipleSelector = React.forwardRef<
       }
 
       void exec()
-    }, [debouncedSearchTerm, open])
+    }, [debouncedSearchTerm, groupBy, onSearch, open, triggerSearchOnFocus])
 
     const CreatableItem = () => {
       if (!creatable) return undefined
@@ -481,7 +481,7 @@ const MultipleSelector = React.forwardRef<
                               className={cn(
                                 'cursor-pointer',
                                 option.disable &&
-                                  'cursor-default text-muted-foreground'
+                                'cursor-default text-muted-foreground'
                               )}
                             >
                               {option.label}

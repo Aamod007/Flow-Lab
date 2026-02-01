@@ -1,27 +1,26 @@
 import { authMiddleware } from '@clerk/nextjs'
 
+// This example protects all routes including api/trpc routes
+// Please edit this to allow other routes to be public as needed.
+// See https://clerk.com/docs/references/nextjs/auth-middleware for more information about configuring your Middleware
 export default authMiddleware({
-  publicRoutes: [
-    '/',
-    '/api/clerk-webhook',
-    '/api/drive-activity/notification',
-    '/api/payment/success',
-  ],
-  ignoredRoutes: [
-    '/api/auth/callback/discord',
-    '/api/auth/callback/notion',
-    '/api/auth/callback/slack',
-    '/api/flow',
-    '/api/cron/wait',
-  ],
+    publicRoutes: [
+        '/',
+        '/auth/sign-in',
+        '/auth/sign-up',
+        '/api/clerk-webhook',
+        '/api/drive-activity/notification',
+        '/api/payment/success',
+    ],
+    ignoredRoutes: [
+        '/api/auth/callback/discord',
+        '/api/auth/callback/notion',
+        '/api/auth/callback/slack',
+        '/api/flow',
+        '/api/cron/wait',
+    ],
 })
 
 export const config = {
-  matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
+    matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
 }
-
-// https://www.googleapis.com/auth/userinfo.email
-// https://www.googleapis.com/auth/userinfo.profile
-// https://www.googleapis.com/auth/drive.activity.readonly
-// https://www.googleapis.com/auth/drive.metadata
-// https://www.googleapis.com/auth/drive.readonly

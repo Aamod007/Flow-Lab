@@ -67,11 +67,18 @@ const EditorCanvasCardSingle = ({ data }: { data: EditorCanvasCardType }) => {
         </Badge>
         <div
           className={clsx('absolute left-3 top-4 h-2 w-2 rounded-full', {
-            'bg-green-500': Math.random() < 0.6,
-            'bg-orange-500': Math.random() >= 0.6 && Math.random() < 0.8,
-            'bg-red-500': Math.random() >= 0.8,
+            'bg-green-500': data.completed || data.metadata?.status === 'completed',
+            'bg-orange-500': (data.current && !data.completed) || data.metadata?.status === 'paused',
+            'bg-purple-500 animate-pulse': data.metadata?.status === 'thinking',
+            'bg-red-500': data.metadata?.status === 'failed',
+            'bg-gray-500': !data.completed && !data.current && !data.metadata?.status,
           })}
         ></div>
+        {data.type === 'AI' && data.metadata?.cost !== undefined && (
+          <div className="absolute bottom-1 right-2 text-[10px] font-mono text-muted-foreground bg-secondary/50 px-1 rounded hover:bg-secondary">
+            ${Number(data.metadata.cost).toFixed(4)}
+          </div>
+        )}
       </Card>
       <CustomHandle
         type="source"

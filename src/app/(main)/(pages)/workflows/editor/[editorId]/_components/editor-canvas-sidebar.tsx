@@ -19,6 +19,7 @@ import {
   onDragStart,
 } from '@/lib/editor-utils'
 import EditorCanvasIconHelper from './editor-canvas-card-icon-hepler'
+import AIConfigurationForm from './ai-configuration-form'
 import {
   Accordion,
   AccordionContent,
@@ -26,8 +27,8 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 import RenderConnectionAccordion from './render-connection-accordion'
-import RenderOutputAccordion from './render-output-accordian'
-import { useFuzzieStore } from '@/store'
+import RenderOutputAccordion from './render-output-accordion'
+import { useFlowLabStore } from '@/store'
 
 type Props = {
   nodes: EditorNodeType[]
@@ -36,12 +37,12 @@ type Props = {
 const EditorCanvasSidebar = ({ nodes }: Props) => {
   const { state } = useEditor()
   const { nodeConnection } = useNodeConnections()
-  const { googleFile, setSlackChannels } = useFuzzieStore()
+  const { googleFile, setSlackChannels } = useFlowLabStore()
   useEffect(() => {
     if (state) {
       onConnections(nodeConnection, state, googleFile)
     }
-  }, [state])
+  }, [state, googleFile, nodeConnection])
 
   useEffect(() => {
     if (nodeConnection.slackNode.slackAccessToken) {
@@ -50,7 +51,7 @@ const EditorCanvasSidebar = ({ nodes }: Props) => {
         setSlackChannels
       )
     }
-  }, [nodeConnection])
+  }, [nodeConnection, setSlackChannels])
 
   return (
     <aside>
@@ -109,6 +110,11 @@ const EditorCanvasSidebar = ({ nodes }: Props) => {
                 Account
               </AccordionTrigger>
               <AccordionContent>
+                {state.editor.selectedNode.data.title === 'AI' && (
+                  <div className="p-2">
+                    <AIConfigurationForm nodeConnection={nodeConnection} />
+                  </div>
+                )}
                 {CONNECTIONS.map((connection) => (
                   <RenderConnectionAccordion
                     key={connection.title}
@@ -133,7 +139,7 @@ const EditorCanvasSidebar = ({ nodes }: Props) => {
           </Accordion>
         </TabsContent>
       </Tabs>
-    </aside>
+    </aside >
   )
 }
 

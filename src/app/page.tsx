@@ -7,7 +7,6 @@ import Navbar from '@/components/global/navbar'
 import { Button } from '@/components/ui/button'
 import { clients, products } from '@/lib/constant'
 import { CheckIcon } from 'lucide-react'
-import Image from 'next/image'
 
 export default function Home() {
   //WIP: remove fault IMAge for home page
@@ -29,7 +28,7 @@ export default function Home() {
                   </span>
                 </Button>
                 <h1 className="text-5xl md:text-8xl  bg-clip-text text-transparent bg-gradient-to-b from-white to-neutral-600 font-sans font-bold">
-                  Automate Your Work With Fuzzie
+                  Automate Your Work With FlowLab
                 </h1>
               </div>
             }
@@ -45,7 +44,7 @@ export default function Home() {
       <section>
         <HeroParallax products={products}></HeroParallax>
       </section>
-      <section className="mt-[-500px]">
+      <section className="mt-[-250px]">
         <LampComponent />
         <div className="flex flex-wrap items-center justify-center flex-col md:flex-row gap-8 -mt-72">
           <CardContainer className="inter-var ">

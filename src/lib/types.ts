@@ -11,7 +11,59 @@ export const WorkflowFormSchema = z.object({
   description: z.string().min(1, 'Required'),
 })
 
-export type ConnectionTypes = 'Google Drive' | 'Notion' | 'Slack' | 'Discord'
+export type ConnectionTypes =
+  | 'Google Drive'
+  | 'Notion'
+  | 'Slack'
+  | 'Discord'
+  | 'Gmail'
+  | 'Google Sheets'
+  | 'Google Calendar'
+  | 'GitHub'
+  | 'GitLab'
+  | 'Airtable'
+  | 'Trello'
+  | 'Asana'
+  | 'Jira'
+  | 'Linear'
+  | 'Monday.com'
+  | 'Salesforce'
+  | 'HubSpot'
+  | 'Mailchimp'
+  | 'SendGrid'
+  | 'Twilio'
+  | 'Stripe'
+  | 'PayPal'
+  | 'Shopify'
+  | 'WooCommerce'
+  | 'Telegram'
+  | 'WhatsApp'
+  | 'Twitter'
+  | 'LinkedIn'
+  | 'Facebook'
+  | 'Instagram'
+  | 'Dropbox'
+  | 'OneDrive'
+  | 'AWS S3'
+  | 'OpenAI'
+  | 'Anthropic'
+  | 'PostgreSQL'
+  | 'MySQL'
+  | 'MongoDB'
+  | 'Redis'
+  | 'Supabase'
+  | 'Firebase'
+  | 'Webhook'
+  | 'HTTP Request'
+  | 'Zapier'
+  | 'Microsoft Teams'
+  | 'Zoom'
+  | 'Calendly'
+  | 'Typeform'
+  | 'Google Forms'
+  | 'Google Gemini'
+  | 'Ollama'
+  | 'Groq'
 
 export type Connection = {
   title: ConnectionTypes
@@ -59,34 +111,35 @@ export type EditorNode = EditorNodeType
 
 export type EditorActions =
   | {
-      type: 'LOAD_DATA'
-      payload: {
-        elements: EditorNode[]
-        edges: {
-          id: string
-          source: string
-          target: string
-        }[]
-      }
+    type: 'LOAD_DATA'
+    payload: {
+      elements: EditorNode[]
+      edges: {
+        id: string
+        source: string
+        target: string
+      }[]
     }
+  }
   | {
-      type: 'UPDATE_NODE'
-      payload: {
-        elements: EditorNode[]
-      }
+    type: 'UPDATE_NODE'
+    payload: {
+      elements: EditorNode[]
     }
+  }
   | { type: 'REDO' }
   | { type: 'UNDO' }
   | {
-      type: 'SELECTED_ELEMENT'
-      payload: {
-        element: EditorNode
-      }
+    type: 'SELECTED_ELEMENT'
+    payload: {
+      element: EditorNode
     }
+  }
 
 export const nodeMapper: Record<string, string> = {
   Notion: 'notionNode',
   Slack: 'slackNode',
   Discord: 'discordNode',
   'Google Drive': 'googleNode',
+  AI: 'aiNode',
 }

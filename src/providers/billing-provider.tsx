@@ -10,9 +10,9 @@ type BillingProviderProps = {
 }
 
 const initialValues: BillingProviderProps = {
-  credits: '',
+  credits: '10',
   setCredits: () => undefined,
-  tier: '',
+  tier: 'Free',
   setTier: () => undefined,
 }
 

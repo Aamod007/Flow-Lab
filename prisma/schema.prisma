@@ -31,6 +31,10 @@ model User {
   Slack                 Slack[]
   connections           Connections[]
   workflows             Workflows[]
+  apiKeys               ApiKey[]
+  costTracking          CostTracking[]
+  ollamaModels          OllamaModel[]
+  executionLogs         ExecutionLog[]
 }
 
 model LocalGoogleCredential {
@@ -92,7 +96,7 @@ model Notion {
 
 model Connections {
   id               String          @id @default(uuid())
-  type             String          @unique
+  type             String
   DiscordWebhook   DiscordWebhook? @relation(fields: [discordWebhookId], references: [id])
   discordWebhookId String?
   Notion           Notion?         @relation(fields: [notionId], references: [id])
@@ -121,4 +125,73 @@ model Workflows {
   description       String
   User              User     @relation(fields: [userId], references: [clerkId])
   userId            String
+  schedules         Schedule[]
+  executionLogs     ExecutionLog[]
+}
+
+model ApiKey {
+  id        String   @id @default(uuid())
+  provider  String
+  key       String
+  isActive  Boolean  @default(true)
+  User      User     @relation(fields: [userId], references: [clerkId])
+  userId    String
+  
+  @@unique([userId, provider])
+}
+
+model Schedule {
+  id          String    @id @default(uuid())
+  workflowId  String
+  workflow    Workflows @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  type        String    // "CRON", "INTERVAL", "EVENT"
+  definition  String    // JSON string for details
+  active      Boolean   @default(true)
+  lastRun     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model ExecutionLog {
+  id          String    @id @default(uuid())
+  workflowId  String
+  workflow    Workflows @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  userId      String?
+  User        User?     @relation(fields: [userId], references: [clerkId])
+  status      String    // "RUNNING", "COMPLETED", "FAILED"
+  startTime   DateTime  @default(now())
+  endTime     DateTime?
+  duration    Int?      // milliseconds
+  totalCost   Float?    @default(0.0)
+  creditsUsed Int?      @default(0)
+  logs        String?   // JSON string of detailed logs
+  input       String?   // JSON
+  output      String?   // JSON
+  error       String?
+}
+
+model CostTracking {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [clerkId])
+  month       String   // "YYYY-MM"
+  totalCost   Float    @default(0.0)
+  limit       Float?
+  alertsSent  Boolean  @default(false)
+  breakdown   String?  // JSON
+  
+  @@unique([userId, month])
+}
+
+model OllamaModel {
+  id          String    @id @default(uuid())
+  name        String
+  size        String
+  downloaded  Boolean   @default(false)
+  lastUsed    DateTime?
+  specs       String?   // JSON
+  userId      String
+  User        User      @relation(fields: [userId], references: [clerkId])
+
+  @@unique([userId, name])
 }

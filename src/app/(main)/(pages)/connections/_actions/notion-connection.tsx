@@ -1,8 +1,8 @@
 'use server'
 
-import { db } from '@/lib/db'
-import { currentUser } from '@clerk/nextjs'
 import { Client } from '@notionhq/client'
+
+// Mock Notion connection for demo mode - no database required
 
 export const onNotionConnect = async (
   access_token: string,
@@ -12,55 +12,18 @@ export const onNotionConnect = async (
   database_id: string,
   id: string
 ) => {
-  'use server'
-  if (access_token) {
-    //check if notion is connected
-    const notion_connected = await db.notion.findFirst({
-      where: {
-        accessToken: access_token,
-      },
-      include: {
-        connections: {
-          select: {
-            type: true,
-          },
-        },
-      },
-    })
-
-    if (!notion_connected) {
-      //create connection
-      await db.notion.create({
-        data: {
-          userId: id,
-          workspaceIcon: workspace_icon!,
-          accessToken: access_token,
-          workspaceId: workspace_id!,
-          workspaceName: workspace_name!,
-          databaseId: database_id,
-          connections: {
-            create: {
-              userId: id,
-              type: 'Notion',
-            },
-          },
-        },
-      })
-    }
-  }
+  // Mock connection - just log and return success
+  console.log('Notion connection requested for:', workspace_name)
+  return { success: true }
 }
-export const getNotionConnection = async () => {
-  const user = await currentUser()
-  if (user) {
-    const connection = await db.notion.findFirst({
-      where: {
-        userId: user.id,
-      },
-    })
-    if (connection) {
-      return connection
-    }
-  }
+
+export const getNotionConnection = async (): Promise<{
+  accessToken: string
+  databaseId: string
+  workspaceName: string
+} | null> => {
+  // Return null for demo - no database required
+  return null
 }
 
 export const getNotionDatabase = async (

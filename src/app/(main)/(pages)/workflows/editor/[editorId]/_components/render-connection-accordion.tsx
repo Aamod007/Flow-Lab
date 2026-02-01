@@ -6,7 +6,7 @@ import MultipleSelector from '@/components/ui/multiple-selector'
 import { Connection } from '@/lib/types'
 import { useNodeConnections } from '@/providers/connections-provider'
 import { EditorState } from '@/providers/editor-provider'
-import { useFuzzieStore } from '@/store'
+import { useFlowLabStore } from '@/store'
 import {
   Command,
   CommandEmpty,
@@ -23,28 +23,6 @@ import { CheckIcon, ChevronsUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
-const frameworks = [
-  {
-    value: 'next.js',
-    label: 'Next.js',
-  },
-  {
-    value: 'sveltekit',
-    label: 'SvelteKit',
-  },
-  {
-    value: 'nuxt.js',
-    label: 'Nuxt.js',
-  },
-  {
-    value: 'remix',
-    label: 'Remix',
-  },
-  {
-    value: 'astro',
-    label: 'Astro',
-  },
-]
 
 const RenderConnectionAccordion = ({
   connection,
@@ -65,7 +43,7 @@ const RenderConnectionAccordion = ({
 
   const { nodeConnection } = useNodeConnections()
   const { slackChannels, selectedSlackChannels, setSelectedSlackChannels } =
-    useFuzzieStore()
+    useFlowLabStore()
 
   const [open, setOpen] = React.useState(false)
   const [value, setValue] = React.useState('')
@@ -87,7 +65,9 @@ const RenderConnectionAccordion = ({
             icon={image}
             description={description}
             type={title}
-            connected={{ [title]: isConnected }}
+            connectionStatus={{ connected: !!isConnected }}
+            onConnect={() => { }}
+            onDisconnect={() => { }}
           />
           {slackSpecial && isConnected && (
             <div className="p-6">

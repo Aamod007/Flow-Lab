@@ -74,3 +74,9 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Hide Clerk branding artifact if present */
+.cl-internal-b3fm6y,
+.cl-badge {
+  display: none !important;
+}

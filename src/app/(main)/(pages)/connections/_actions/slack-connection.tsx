@@ -1,9 +1,9 @@
 'use server'
 
 import { Option } from '@/components/ui/multiple-selector'
-import { db } from '@/lib/db'
-import { currentUser } from '@clerk/nextjs'
 import axios from 'axios'
+
+// Mock Slack connection for demo mode - no database required
 
 export const onSlackConnect = async (
   app_id: string,
@@ -15,39 +15,21 @@ export const onSlackConnect = async (
   team_name: string,
   user_id: string
 ): Promise<void> => {
-  if (!slack_access_token) return
-
-  const slackConnection = await db.slack.findFirst({
-    where: { slackAccessToken: slack_access_token },
-    include: { connections: true },
-  })
-
-  if (!slackConnection) {
-    await db.slack.create({
-      data: {
-        userId: user_id,
-        appId: app_id,
-        authedUserId: authed_user_id,
-        authedUserToken: authed_user_token,
-        slackAccessToken: slack_access_token,
-        botUserId: bot_user_id,
-        teamId: team_id,
-        teamName: team_name,
-        connections: {
-          create: { userId: user_id, type: 'Slack' },
-        },
-      },
-    })
-  }
+  // Mock connection - just log and return
+  console.log('Slack connection requested for team:', team_name)
 }
 
-export const getSlackConnection = async () => {
-  const user = await currentUser()
-  if (user) {
-    return await db.slack.findFirst({
-      where: { userId: user.id },
-    })
-  }
+export const getSlackConnection = async (): Promise<{
+  appId: string
+  authedUserId: string
+  authedUserToken: string
+  slackAccessToken: string
+  botUserId: string
+  teamId: string
+  teamName: string
+  userId: string
+} | null> => {
+  // Return null for demo - no database required
   return null
 }
 

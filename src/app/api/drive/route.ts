@@ -1,10 +1,14 @@
 import { google } from 'googleapis'
 import { auth, clerkClient } from '@clerk/nextjs'
 import { NextResponse } from 'next/server'
-import { v4 as uuidv4 } from 'uuid'
-import { db } from '@/lib/db'
+
+// Google Drive API route - works without database
 
 export async function GET() {
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.OAUTH2_REDIRECT_URI) {
+    return NextResponse.json({ message: 'Missing Google OAuth configuration' }, { status: 500 })
+  }
+
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
@@ -16,22 +20,22 @@ export async function GET() {
     return NextResponse.json({ message: 'User not found' })
   }
 
-  const clerkResponse = await clerkClient.users.getUserOauthAccessToken(
-    userId,
-    'oauth_google'
-  )
-
-  const accessToken = clerkResponse[0].token
-  oauth2Client.setCredentials({
-    access_token: accessToken,
-  })
-
-  const drive = google.drive({
-    version: 'v3',
-    auth: oauth2Client,
-  })
-  
   try {
+    const clerkResponse = await clerkClient.users.getUserOauthAccessToken(
+      userId,
+      'oauth_google'
+    )
+
+    const accessToken = clerkResponse[0].token
+    oauth2Client.setCredentials({
+      access_token: accessToken,
+    })
+
+    const drive = google.drive({
+      version: 'v3',
+      auth: oauth2Client,
+    })
+
     const response = await drive.files.list()
 
     if (response) {
@@ -54,9 +58,11 @@ export async function GET() {
       )
     }
   } catch (error) {
+    console.error('Error fetching Google Drive files:', error)
     return Response.json(
       {
-        message: 'Something went wrong',
+        message: 'Failed to fetch Google Drive files',
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       {
         status: 500,

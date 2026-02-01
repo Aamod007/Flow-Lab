@@ -43,6 +43,16 @@ export type ConnectionProviderProps = {
   >
   isLoading: boolean
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
+  aiNode: {
+    model: string
+    provider: string
+    prompt: string
+    systemPrompt: string
+    temperature: number
+    maxTokens: number
+    testResult?: string
+  }
+  setAiNode: React.Dispatch<React.SetStateAction<any>>
 }
 
 type ConnectionWithChildProps = {
@@ -78,6 +88,14 @@ const InitialValues: ConnectionProviderProps = {
     teamName: '',
     content: '',
   },
+  aiNode: {
+    model: 'gpt-3.5-turbo',
+    provider: 'OpenAI',
+    prompt: '',
+    systemPrompt: '',
+    temperature: 0.7,
+    maxTokens: 1000,
+  },
   isLoading: false,
   setGoogleNode: () => undefined,
   setDiscordNode: () => undefined,
@@ -85,6 +103,7 @@ const InitialValues: ConnectionProviderProps = {
   setSlackNode: () => undefined,
   setIsLoading: () => undefined,
   setWorkFlowTemplate: () => undefined,
+  setAiNode: () => undefined,
 }
 
 const ConnectionsContext = createContext(InitialValues)
@@ -95,6 +114,7 @@ export const ConnectionsProvider = ({ children }: ConnectionWithChildProps) => {
   const [googleNode, setGoogleNode] = useState(InitialValues.googleNode)
   const [notionNode, setNotionNode] = useState(InitialValues.notionNode)
   const [slackNode, setSlackNode] = useState(InitialValues.slackNode)
+  const [aiNode, setAiNode] = useState(InitialValues.aiNode)
   const [isLoading, setIsLoading] = useState(InitialValues.isLoading)
   const [workflowTemplate, setWorkFlowTemplate] = useState(
     InitialValues.workflowTemplate
@@ -109,6 +129,8 @@ export const ConnectionsProvider = ({ children }: ConnectionWithChildProps) => {
     setNotionNode,
     slackNode,
     setSlackNode,
+    aiNode,
+    setAiNode,
     isLoading,
     setIsLoading,
     workflowTemplate,
