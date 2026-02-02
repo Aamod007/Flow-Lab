@@ -31,7 +31,17 @@ import EditorCanvasSidebar from './editor-canvas-sidebar'
 import { onGetNodesEdges } from '../../../_actions/workflow-connections'
 import { onExecuteWorkflow } from '../../../_actions/execute-workflow'
 import { Button } from '@/components/ui/button'
-import { Trash2, Plus, Minus, Maximize, Undo, Redo, Play, Save, FileText, LayoutDashboard } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Trash2, Plus, Minus, Maximize, Undo, Redo, Play, Save, FileText, LayoutDashboard, MessageSquare, Sparkles } from 'lucide-react'
 import ExecutionDashboard from './execution-dashboard'
 import clsx from 'clsx'
 import { useFlowLabStore } from '@/store'
@@ -72,6 +82,13 @@ const EditorCanvas = (props: Props) => {
   const [reactFlowInstance, setReactFlowInstance] =
     useState<ReactFlowInstance>()
   const pathname = usePathname()
+  
+  // Input dialog state for workflow execution
+  const [showInputDialog, setShowInputDialog] = useState(false)
+  const [workflowInput, setWorkflowInput] = useState('')
+  const [isExecuting, setIsExecuting] = useState(false)
+
+  const nodeTypesMemo = useMemo(() => nodeTypes, [])
 
   const onDragOver = useCallback((event: any) => {
     event.preventDefault()
@@ -343,7 +360,7 @@ const EditorCanvas = (props: Props) => {
                     onInit={setReactFlowInstance}
                     fitView
                     onClick={handleClickCanvas}
-                    nodeTypes={nodeTypes}
+                    nodeTypes={nodeTypesMemo}
                   >
 
                     <Background
@@ -374,27 +391,7 @@ const EditorCanvas = (props: Props) => {
                         <Button
                           size="sm"
                           className="h-8 rounded-full bg-green-600 hover:bg-green-700 text-white gap-2 px-4 shadow-green-500/20 shadow-lg"
-                          onClick={async () => {
-                            setIsDashboardOpen(true)
-                            toast.loading('Executing workflow...')
-                            try {
-                              // @ts-ignore
-                              const { selectedSlackChannels } = useFlowLabStore.getState()
-                              const result = await onExecuteWorkflow(JSON.stringify(state.editor.elements), JSON.stringify(edges), selectedSlackChannels)
-                              if (result.success) {
-                                toast.dismiss()
-                                toast.success('Workflow executed successfully!')
-                                // Optional: Show logs
-                                console.log(result.logs)
-                              } else {
-                                toast.dismiss()
-                                toast.error('Execution Failed: ' + result.message)
-                              }
-                            } catch (e: any) {
-                              toast.dismiss()
-                              toast.error('Error: ' + e.message)
-                            }
-                          }}
+                          onClick={() => setShowInputDialog(true)}
                         >
                           <Play className="w-4 h-4 fill-current" />
                           Test Run
@@ -574,6 +571,136 @@ const EditorCanvas = (props: Props) => {
           </FlowInstance>
         )}
       </ResizablePanel>
+
+      {/* Workflow Input Dialog */}
+      <Dialog open={showInputDialog} onOpenChange={setShowInputDialog}>
+        <DialogContent className="sm:max-w-[500px] bg-neutral-900 border-neutral-800">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg text-white">
+              Run Workflow
+            </DialogTitle>
+            <DialogDescription className="text-neutral-500">
+              Enter input data to process through the workflow
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-medium text-neutral-300">Input Data</Label>
+                <span className="text-[10px] px-1.5 py-0.5 bg-white text-black rounded font-medium">Required</span>
+              </div>
+              <Textarea
+                placeholder="Type your message, question, or data here..."
+                value={workflowInput}
+                onChange={(e) => setWorkflowInput(e.target.value)}
+                className="min-h-[120px] bg-neutral-800 border-neutral-700 text-white placeholder:text-neutral-500 resize-none text-sm"
+              />
+              <p className="text-[10px] text-neutral-500">
+                This input replaces <code className="bg-neutral-800 px-1 rounded text-white font-mono">{'{{content}}'}</code> in your AI prompts
+              </p>
+            </div>
+
+            {/* Quick Examples */}
+            <div className="space-y-2">
+              <Label className="text-xs text-neutral-400">Examples</Label>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  className="text-[10px] px-2 py-1 rounded bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-neutral-400 transition-colors"
+                  onClick={() => setWorkflowInput('Please schedule a meeting with the team for next Monday at 2 PM to discuss the Q1 roadmap.')}
+                >
+                  Meeting Request
+                </button>
+                <button
+                  type="button"
+                  className="text-[10px] px-2 py-1 rounded bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-neutral-400 transition-colors"
+                  onClick={() => setWorkflowInput('Our latest product launch exceeded expectations with 150% of target sales in the first week!')}
+                >
+                  News Update
+                </button>
+                <button
+                  type="button"
+                  className="text-[10px] px-2 py-1 rounded bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-neutral-400 transition-colors"
+                  onClick={() => setWorkflowInput('Can you help me understand the key differences between React and Vue.js?')}
+                >
+                  Question
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowInputDialog(false)
+                setWorkflowInput('')
+              }}
+              className="border-neutral-700 bg-transparent text-neutral-300 hover:bg-neutral-800 text-sm h-9"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!workflowInput.trim()) {
+                  toast.error('Please enter some input data')
+                  return
+                }
+                
+                setIsExecuting(true)
+                setShowInputDialog(false)
+                setIsDashboardOpen(true)
+                toast.loading('Executing workflow...')
+                
+                try {
+                  // @ts-ignore
+                  const { selectedSlackChannels } = useFlowLabStore.getState()
+                  const result = await onExecuteWorkflow(
+                    JSON.stringify(state.editor.elements), 
+                    JSON.stringify(edges), 
+                    selectedSlackChannels,
+                    workflowInput
+                  )
+                  
+                  if (result.success) {
+                    toast.dismiss()
+                    toast.success('Workflow executed successfully!')
+                    const logs = result.logs || []
+                    useFlowLabStore.getState().setLogs(logs)
+                    console.log(result.logs)
+                  } else {
+                    toast.dismiss()
+                    toast.error('Execution Failed: ' + result.message)
+                    const logs = result.logs || []
+                    useFlowLabStore.getState().setLogs(logs)
+                  }
+                } catch (e: any) {
+                  toast.dismiss()
+                  toast.error('Error: ' + e.message)
+                } finally {
+                  setIsExecuting(false)
+                  setWorkflowInput('')
+                }
+              }}
+              disabled={isExecuting || !workflowInput.trim()}
+              className="bg-white text-black hover:bg-neutral-200 text-sm h-9 font-medium"
+            >
+              {isExecuting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Running...
+                </>
+              ) : (
+                'Run'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </ResizablePanelGroup>
   )
 }

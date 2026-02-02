@@ -17,6 +17,8 @@ type FlowLabStore = {
   setSlackChannels: (slackChannels: Option[]) => void
   selectedSlackChannels: Option[]
   setSelectedSlackChannels: (selectedSlackChannels: Option[]) => void
+  logs: string[]
+  setLogs: (logs: string[]) => void
 }
 
 export const useFlowLabStore = create<FlowLabStore>()((set) => ({
@@ -27,6 +29,8 @@ export const useFlowLabStore = create<FlowLabStore>()((set) => ({
   selectedSlackChannels: [],
   setSelectedSlackChannels: (selectedSlackChannels: Option[]) =>
     set({ selectedSlackChannels }),
+  logs: [] as string[],
+  setLogs: (logs: string[]) => set({ logs }),
 }))
 
 

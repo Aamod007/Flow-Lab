@@ -4,6 +4,7 @@ import CostDashboard from './_components/cost-dashboard'
 import CostBreakdownChart from './_components/cost-breakdown-chart'
 import { OptimizationSuggestions } from './_components/optimization-suggestions'
 import BudgetControls from './_components/budget-controls'
+import WorkflowCostTable from './_components/workflow-cost-table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 type Props = {
@@ -21,6 +22,7 @@ const Billing = async (props: Props) => {
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="bg-neutral-800/50 mb-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="workflows">By Workflow</TabsTrigger>
             <TabsTrigger value="analytics">AI Cost Analytics</TabsTrigger>
             <TabsTrigger value="optimization">Optimization</TabsTrigger>
             <TabsTrigger value="budget">Budget Controls</TabsTrigger>
@@ -28,6 +30,10 @@ const Billing = async (props: Props) => {
           
           <TabsContent value="overview" className="mt-0">
             <CostDashboard />
+          </TabsContent>
+
+          <TabsContent value="workflows" className="mt-0">
+            <WorkflowCostTable />
           </TabsContent>
           
           <TabsContent value="analytics" className="mt-0">

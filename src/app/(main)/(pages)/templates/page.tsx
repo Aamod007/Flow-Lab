@@ -386,6 +386,55 @@ const templates = [
             { type: 'Notion', label: 'Intel Database', icon: '/notion.png', desc: 'Archive findings' },
             { type: 'Slack', label: 'Weekly Brief', icon: '/slack.png', desc: 'Share with team' }
         ]
+    },
+    // ===== Slack Integration Templates =====
+    {
+        id: 'template-ai-to-slack',
+        name: 'AI to Slack Messenger',
+        description: 'Process any input with AI and send the intelligent response directly to a Slack channel. Perfect for automated notifications, summaries, or AI-generated updates.',
+        category: 'Communication',
+        icon: '/slack.png',
+        popular: true,
+        complexity: 'Simple',
+        aiFirst: true,
+        estimatedCost: 'FREE (Groq)',
+        steps: [
+            { type: 'Trigger', label: 'Start Workflow', icon: '/googleCalendar.png', desc: 'Manual or webhook trigger' },
+            { type: 'AI', label: 'Process with AI', icon: '/openai.png', desc: 'Generate intelligent response', provider: 'Groq', model: 'llama-3.1-70b-versatile' },
+            { type: 'Slack', label: 'Send to Slack', icon: '/slack.png', desc: 'Post message to channel' }
+        ]
+    },
+    {
+        id: 'template-slack-ai-bot',
+        name: 'Slack AI Auto-Responder',
+        description: 'Receive messages, analyze them with AI for intelligent responses, and send replies back to Slack. Great for support bots or automated Q&A.',
+        category: 'Communication',
+        icon: '/slack.png',
+        popular: true,
+        complexity: 'Simple',
+        aiFirst: true,
+        estimatedCost: 'FREE (Groq)',
+        steps: [
+            { type: 'Trigger', label: 'Message Received', icon: '/slack.png', desc: 'Incoming message trigger' },
+            { type: 'AI', label: 'AI Analyzer', icon: '/openai.png', desc: 'Understand & craft response', provider: 'Groq', model: 'llama-3.1-70b-versatile' },
+            { type: 'Slack', label: 'Send Response', icon: '/slack.png', desc: 'Reply to Slack channel' }
+        ]
+    },
+    {
+        id: 'template-daily-summary-slack',
+        name: 'Daily AI Summary to Slack',
+        description: 'Automatically generate a daily summary using AI and post it to your team Slack channel. Perfect for standup updates or project summaries.',
+        category: 'Communication',
+        icon: '/slack.png',
+        popular: false,
+        complexity: 'Simple',
+        aiFirst: true,
+        estimatedCost: 'FREE (Groq)',
+        steps: [
+            { type: 'Trigger', label: 'Daily Trigger', icon: '/googleCalendar.png', desc: 'Run every day at set time' },
+            { type: 'AI', label: 'Generate Summary', icon: '/openai.png', desc: 'Create daily summary', provider: 'Groq', model: 'llama-3.1-70b-versatile' },
+            { type: 'Slack', label: 'Post to Team', icon: '/slack.png', desc: 'Send to team channel' }
+        ]
     }
 ]
 
@@ -409,17 +458,31 @@ const TemplatesPage = () => {
     const handleUseTemplate = (template: typeof templates[0]) => {
         try {
             // Generate Nodes based on template steps
-            const generatedNodes = template.steps.map((step, index) => {
+            const generatedNodes = template.steps.map((step: any, index: number) => {
+                // Build metadata based on step type
+                let metadata: Record<string, any> = {}
+                
+                // If it's an AI node, include provider and model from template
+                if (step.type === 'AI' && step.provider) {
+                    metadata = {
+                        provider: step.provider,
+                        model: step.model || 'llama-3.1-70b-versatile',
+                        systemPrompt: 'You are a helpful assistant.',
+                        temperature: 0.7,
+                        maxTokens: 1000,
+                    }
+                }
+                
                 return {
                     id: `node-${index}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // More unique ID
-                    type: index === 0 ? 'Trigger' : 'Action', // First is always trigger
+                    type: step.type, // Use actual step type (Trigger, AI, Slack, etc.)
                     position: { x: 200 + (index * 300), y: 300 }, // Horizontal layout with ample spacing
                     data: {
                         title: step.type,
                         description: step.desc,
                         completed: false,
                         current: false,
-                        metadata: {},
+                        metadata,
                         type: step.type, // Pass the specific type (e.g., 'Slack', 'AI')
                     }
                 }
@@ -515,21 +578,7 @@ const TemplatesPage = () => {
                             )}
                             onClick={() => setSelectedTemplate(template)}
                         >
-                            {/* Badges Container */}
-                            <div className="absolute top-0 right-0 z-10 flex flex-col items-end gap-1">
-                                {template.popular && (
-                                    <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg">
-                                        POPULAR
-                                    </div>
-                                )}
-                                {(template as any).aiFirst && (
-                                    <div className="bg-gradient-to-r from-purple-600 to-violet-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg flex items-center gap-1">
-                                        <Sparkles className="w-3 h-3" />
-                                        AI-FIRST
-                                    </div>
-                                )}
-                            </div>
-
+                            {/* Badges Container - removed */}
                             <CardHeader className="pb-3 pt-6">
                                 <div className="flex flex-row items-center gap-4">
                                     <div className={cn(

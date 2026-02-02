@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { useEditor } from '@/providers/editor-provider'
 import { clsx } from 'clsx'
 import AgentChatPanel from './agent-chat-panel'
+import { useFlowLabStore } from '@/store'
 
 type LogEntry = {
     id: string
@@ -36,12 +37,33 @@ const MOCK_AGENTS: AgentStatus[] = []
 
 const ExecutionDashboard = () => {
     const { state } = useEditor()
+    // @ts-ignore
+    const { logs: storeLogs } = useFlowLabStore()
     const [logs, setLogs] = useState<LogEntry[]>([])
     const [agents, setAgents] = useState<AgentStatus[]>([])
     const [isRunning, setIsRunning] = useState(false)
     const [progress, setProgress] = useState(0)
     const [tokens, setTokens] = useState(0)
     const [totalCost, setTotalCost] = useState(0)
+
+    // Sync logs from store
+    useEffect(() => {
+        if (!storeLogs || storeLogs.length === 0) return
+
+        // Convert string logs to structured logs
+        const formattedLogs: LogEntry[] = storeLogs.map((log: string, index: number) => ({
+            id: index.toString(),
+            timestamp: new Date().toLocaleTimeString(),
+            agentName: log.includes('AI') ? 'AI' : (log.includes('Slack') ? 'Slack' : (log.includes('Notion') ? 'Notion' : 'System')),
+            type: 'INFO',
+            message: log.replace(/^- /, '')
+        }))
+
+        setLogs(formattedLogs)
+
+        // Disable simulation if we have real logs
+        setIsRunning(false)
+    }, [storeLogs])
 
     // Sync agents with editor nodes
     useEffect(() => {
@@ -135,7 +157,7 @@ const ExecutionDashboard = () => {
         let currentAgentIndex = 0
         let stepCount = 0
         let hasLoggedStart = false
-        
+
         // Add initial workflow start log
         const startLog: LogEntry = {
             id: Math.random().toString(),
@@ -164,7 +186,7 @@ const ExecutionDashboard = () => {
                 if (currentAgent && currentAgent.status !== 'RUNNING' && !hasLoggedStart) {
                     hasLoggedStart = true
                     newAgents[currentAgentIndex] = { ...currentAgent, status: 'RUNNING' }
-                    
+
                     // Add start log
                     const startMsg = getContextualLogs(currentAgent.name, currentAgent.name, 'start')
                     const newLog: LogEntry = {
@@ -186,7 +208,7 @@ const ExecutionDashboard = () => {
                             duration: `${(Math.random() * 2 + 1).toFixed(1)}s`,
                             cost: `$${(Math.random() * 0.005).toFixed(4)}`
                         }
-                        
+
                         // Add completion log
                         const completeMsg = getContextualLogs(currentAgent.name, currentAgent.name, 'complete')
                         const completeLog: LogEntry = {
@@ -206,7 +228,7 @@ const ExecutionDashboard = () => {
                 if (currentAgentIndex >= newAgents.length) {
                     setIsRunning(false)
                     setProgress(100)
-                    
+
                     // Add workflow complete log
                     const endLog: LogEntry = {
                         id: Math.random().toString(),
@@ -269,81 +291,81 @@ const ExecutionDashboard = () => {
     return (
         <div className="flex h-full flex-col bg-background/95 backdrop-blur-sm border-l border-border/50 shadow-xl">
             {/* Header / Controls */}
-            <div className="p-4 border-b border-border/50 flex justify-between items-center bg-muted/20">
+            <div className="p-4 border-b border-neutral-800 flex justify-between items-center bg-neutral-900/50">
                 <div>
                     <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                        <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
                         <h2 className="text-lg font-semibold tracking-tight">Live Monitor</h2>
                     </div>
                     <p className="text-xs text-muted-foreground font-mono mt-1">Ref: #exec-{Math.floor(Math.random() * 1000)}</p>
                 </div>
                 <div className="flex gap-2">
                     {!isRunning ? (
-                        <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-900/20" onClick={handleRunObj}>
+                        <Button size="sm" className="bg-white hover:bg-neutral-200 text-black shadow-lg" onClick={handleRunObj}>
                             <Play className="h-4 w-4 mr-1 fill-current" /> Run
                         </Button>
                     ) : (
-                        <Button size="sm" variant="outline" className="border-green-500/50 text-green-500 hover:bg-green-500/10" onClick={() => setIsRunning(false)}>
+                        <Button size="sm" variant="outline" className="border-neutral-600 hover:bg-neutral-800" onClick={() => setIsRunning(false)}>
                             <Pause className="h-4 w-4 mr-1 fill-current" /> Pause
                         </Button>
                     )}
-                    <Button size="sm" variant="ghost" className="hover:bg-red-500/10 hover:text-red-500 transition-colors" disabled={!isRunning} onClick={() => setIsRunning(false)}>
+                    <Button size="sm" variant="ghost" className="hover:bg-neutral-800" disabled={!isRunning} onClick={() => setIsRunning(false)}>
                         <Square className="h-4 w-4 fill-current" />
                     </Button>
                 </div>
             </div>
 
             {/* Metrics Banner */}
-            <div className="grid grid-cols-3 gap-px bg-border/50">
-                <div className="bg-background p-4 flex flex-col items-center justify-center group hover:bg-muted/50 transition-colors cursor-help">
+            <div className="grid grid-cols-3 gap-px bg-neutral-800">
+                <div className="bg-neutral-900 p-4 flex flex-col items-center justify-center group hover:bg-neutral-800 transition-colors cursor-help">
                     <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-1">Progress</div>
-                    <div className="text-2xl font-bold text-primary group-hover:scale-105 transition-transform">{Math.round(progress)}%</div>
-                    <div className="h-1 w-12 bg-muted mt-2 rounded-full overflow-hidden">
-                        <div className="h-full bg-primary transition-all duration-300" style={{ width: `${progress}%` }} />
+                    <div className="text-2xl font-bold group-hover:scale-105 transition-transform">{Math.round(progress)}%</div>
+                    <div className="h-1 w-12 bg-neutral-800 mt-2 rounded-full overflow-hidden">
+                        <div className="h-full bg-white transition-all duration-300" style={{ width: `${progress}%` }} />
                     </div>
                 </div>
-                <div className="bg-background p-4 flex flex-col items-center justify-center group hover:bg-muted/50 transition-colors cursor-help">
+                <div className="bg-neutral-900 p-4 flex flex-col items-center justify-center group hover:bg-neutral-800 transition-colors cursor-help">
                     <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-1">Tokens</div>
                     <div className="text-2xl font-bold group-hover:scale-105 transition-transform font-mono">{tokens.toLocaleString()}</div>
                     <div className="text-[10px] text-muted-foreground mt-1">ctx window</div>
                 </div>
-                <div className="bg-background p-4 flex flex-col items-center justify-center group hover:bg-muted/50 transition-colors cursor-help">
+                <div className="bg-neutral-900 p-4 flex flex-col items-center justify-center group hover:bg-neutral-800 transition-colors cursor-help">
                     <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-1">Total Cost</div>
-                    <div className="text-2xl font-bold text-green-500 group-hover:scale-105 transition-transform font-mono">${totalCost.toFixed(4)}</div>
+                    <div className="text-2xl font-bold group-hover:scale-105 transition-transform font-mono">${totalCost.toFixed(4)}</div>
                     <div className="text-[10px] text-muted-foreground mt-1">est. usd</div>
                 </div>
             </div>
 
             <div className="flex-1 overflow-hidden flex flex-col">
                 <Tabs defaultValue="timeline" className="h-full flex flex-col">
-                    <div className="border-b border-border/50 px-4 bg-muted/10">
+                    <div className="border-b border-neutral-800 px-4 bg-neutral-900/30">
                         <TabsList className="bg-transparent w-full justify-start h-12 p-0 gap-6">
                             <TabsTrigger
                                 value="timeline"
-                                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-full px-0 font-medium"
+                                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-white rounded-none h-full px-0 font-medium"
                             >
                                 Automation Steps
                             </TabsTrigger>
                             <TabsTrigger
                                 value="chat"
-                                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-purple-500 rounded-none h-full px-0 font-medium flex items-center gap-2"
+                                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-white rounded-none h-full px-0 font-medium flex items-center gap-2"
                             >
                                 <MessageSquare className="h-3 w-3" />
                                 Agent Chat
-                                <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4 bg-purple-500/20 text-purple-400 border-0">
+                                <Badge className="text-[9px] px-1.5 py-0 h-4 bg-white text-black border-0">
                                     AI
                                 </Badge>
                             </TabsTrigger>
                             <TabsTrigger
                                 value="logs"
-                                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-full px-0 font-medium"
+                                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-white rounded-none h-full px-0 font-medium"
                             >
                                 System Logs
                             </TabsTrigger>
                         </TabsList>
                     </div>
 
-                    <TabsContent value="timeline" className="flex-1 overflow-hidden p-0 m-0 bg-muted/5">
+                    <TabsContent value="timeline" className="flex-1 overflow-hidden p-0 m-0 bg-neutral-900/30">
                         <ScrollArea className="h-full">
                             <div className="p-4 flex flex-col gap-3">
                                 {agents.length === 0 ? (
@@ -364,26 +386,26 @@ const ExecutionDashboard = () => {
 
                                             <div className="absolute left-0 top-2 z-10">
                                                 <div className={clsx("w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center bg-background transition-colors duration-300", {
-                                                    'border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]': agent.status === 'COMPLETED',
-                                                    'border-primary shadow-[0_0_10px_rgba(59,130,246,0.3)]': agent.status === 'RUNNING',
-                                                    'border-red-500': agent.status === 'FAILED',
-                                                    'border-muted-foreground/30': agent.status === 'IDLE' || agent.status === 'WAITING'
+                                                    'border-white shadow-[0_0_10px_rgba(255,255,255,0.2)]': agent.status === 'COMPLETED',
+                                                    'border-neutral-400 shadow-[0_0_10px_rgba(255,255,255,0.1)]': agent.status === 'RUNNING',
+                                                    'border-neutral-600': agent.status === 'FAILED',
+                                                    'border-neutral-700': agent.status === 'IDLE' || agent.status === 'WAITING'
                                                 })}>
-                                                    {agent.status === 'COMPLETED' && <div className="w-2 h-2 rounded-full bg-green-500" />}
-                                                    {agent.status === 'RUNNING' && <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />}
+                                                    {agent.status === 'COMPLETED' && <div className="w-2 h-2 rounded-full bg-white" />}
+                                                    {agent.status === 'RUNNING' && <div className="w-2 h-2 rounded-full bg-neutral-400 animate-pulse" />}
                                                 </div>
                                             </div>
 
-                                            <Card className={clsx("transition-all duration-300 border bg-card/50 hover:bg-card hover:shadow-md", {
-                                                'border-primary/50 shadow-sm ring-1 ring-primary/10': agent.status === 'RUNNING',
-                                                'border-border/50': agent.status !== 'RUNNING'
+                                            <Card className={clsx("transition-all duration-300 border bg-neutral-900/50 hover:bg-neutral-800/50 hover:shadow-md", {
+                                                'border-neutral-600 shadow-sm ring-1 ring-neutral-600/20': agent.status === 'RUNNING',
+                                                'border-neutral-800': agent.status !== 'RUNNING'
                                             })}>
                                                 <CardContent className="p-3">
                                                     <div className="flex items-center justify-between mb-2">
                                                         <div className="flex flex-col">
                                                             <div className="font-semibold text-sm flex items-center gap-2">
                                                                 {agent.name}
-                                                                {agent.status === 'RUNNING' && <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-primary/30 text-primary bg-primary/5">Active</Badge>}
+                                                                {agent.status === 'RUNNING' && <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-neutral-600 bg-neutral-800">Active</Badge>}
                                                             </div>
                                                             <div className="text-[10px] text-muted-foreground font-mono">{agent.model}</div>
                                                         </div>
@@ -394,14 +416,14 @@ const ExecutionDashboard = () => {
                                                     </div>
 
                                                     {agent.status === 'RUNNING' && (
-                                                        <div className="h-1 w-full bg-muted overflow-hidden rounded-full mt-2">
-                                                            <div className="h-full bg-primary animate-progress origin-left"></div>
+                                                        <div className="h-1 w-full bg-neutral-800 overflow-hidden rounded-full mt-2">
+                                                            <div className="h-full bg-white animate-progress origin-left"></div>
                                                         </div>
                                                     )}
 
-                                                    {agent.cost && <div className="mt-2 pt-2 border-t border-border/30 flex justify-between items-center">
+                                                    {agent.cost && <div className="mt-2 pt-2 border-t border-neutral-700 flex justify-between items-center">
                                                         <span className="text-[10px] text-muted-foreground">Step Cost</span>
-                                                        <span className="text-[10px] font-mono text-green-500 font-medium">{agent.cost}</span>
+                                                        <span className="text-[10px] font-mono font-medium">{agent.cost}</span>
                                                     </div>}
                                                 </CardContent>
                                             </Card>
@@ -414,7 +436,7 @@ const ExecutionDashboard = () => {
 
                     <TabsContent value="chat" className="flex-1 overflow-hidden p-0 m-0">
                         <div className="h-full p-3">
-                            <AgentChatPanel 
+                            <AgentChatPanel
                                 workflowName="Current Workflow"
                                 nodes={state.editor.elements}
                                 lastExecution={isRunning ? undefined : {
@@ -459,8 +481,8 @@ const ExecutionDashboard = () => {
                                     }
 
                                     return (
-                                        <div 
-                                            key={log.id} 
+                                        <div
+                                            key={log.id}
                                             className={clsx(
                                                 "flex gap-2 py-1 px-2 rounded transition-colors",
                                                 log.type === 'SUCCESS' && "bg-green-500/5",
@@ -473,7 +495,7 @@ const ExecutionDashboard = () => {
                                             <span className="text-slate-600 shrink-0 select-none w-[85px]">
                                                 {log.timestamp}
                                             </span>
-                                            
+
                                             {/* Status indicator */}
                                             <span className={clsx("shrink-0 w-[70px]", {
                                                 'text-green-400': log.type === 'SUCCESS',
@@ -486,12 +508,12 @@ const ExecutionDashboard = () => {
                                                 {log.type === 'WARNING' && '⚠ WARN'}
                                                 {log.type === 'INFO' && '• INFO'}
                                             </span>
-                                            
+
                                             {/* Agent name */}
                                             <span className={clsx("font-semibold shrink-0 w-[90px] truncate", getAgentColor(log.agentName || 'System'))}>
                                                 {log.agentName || 'System'}
                                             </span>
-                                            
+
                                             {/* Message */}
                                             <span className={clsx("flex-1", {
                                                 'text-green-300': log.type === 'SUCCESS',
@@ -521,10 +543,10 @@ const ExecutionDashboard = () => {
                 </Tabs>
             </div>
 
-            <div className="p-2 border-t border-border flex justify-between bg-muted/20 text-[10px] text-muted-foreground">
+            <div className="p-2 border-t border-neutral-800 flex justify-between bg-neutral-900/50 text-[10px] text-muted-foreground">
                 <span>AgentFlow Runtime v2.4.0</span>
                 <div className="flex gap-2">
-                    <span className="flex items-center gap-1"><div className="h-1.5 w-1.5 rounded-full bg-green-500"></div> System Online</span>
+                    <span className="flex items-center gap-1"><div className="h-1.5 w-1.5 rounded-full bg-white"></div> System Online</span>
                     <span>Latency: 24ms</span>
                 </div>
             </div>

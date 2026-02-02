@@ -20,7 +20,6 @@ const actions = [
         description: 'Create a new automation',
         icon: Plus,
         href: '/workflows',
-        color: 'bg-blue-500/10 text-blue-500 hover:bg-blue-500/20',
         primary: true,
     },
     {
@@ -28,30 +27,27 @@ const actions = [
         description: 'Manage your integrations',
         icon: Plug,
         href: '/connections',
-        color: 'bg-purple-500/10 text-purple-500 hover:bg-purple-500/20',
     },
     {
         title: 'Billing',
         description: 'View credits & plans',
         icon: CreditCard,
         href: '/billing',
-        color: 'bg-green-500/10 text-green-500 hover:bg-green-500/20',
     },
     {
         title: 'Settings',
         description: 'Configure your account',
         icon: Settings,
         href: '/settings',
-        color: 'bg-orange-500/10 text-orange-500 hover:bg-orange-500/20',
     },
 ]
 
 const QuickActions = () => {
     return (
-        <Card className="border-muted-foreground/20 bg-gradient-to-br from-background to-muted/30">
+        <Card className="border-neutral-800 bg-neutral-900/50">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
-                    <Sparkles className="h-5 w-5 text-primary" />
+                    <Sparkles className="h-5 w-5" />
                     Quick Actions
                 </CardTitle>
             </CardHeader>
@@ -60,21 +56,25 @@ const QuickActions = () => {
                     <Link key={action.title} href={action.href}>
                         <div className={cn(
                             'flex flex-col gap-2 p-4 rounded-lg transition-all duration-200',
-                            'border border-transparent hover:border-primary/20',
-                            'group cursor-pointer',
-                            action.primary ? 'bg-primary/10 hover:bg-primary/20' : 'bg-muted/30 hover:bg-muted/50'
+                            'border border-neutral-800 hover:border-neutral-600',
+                            'group cursor-pointer hover:bg-neutral-800/50',
+                            action.primary && 'bg-neutral-800/30'
                         )}>
                             <div className={cn(
-                                'w-10 h-10 rounded-lg flex items-center justify-center transition-colors',
-                                action.color
+                                'w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200',
+                                action.primary 
+                                    ? 'bg-white group-hover:scale-110' 
+                                    : 'bg-neutral-800 group-hover:bg-white group-hover:scale-110'
                             )}>
-                                <action.icon className="h-5 w-5" />
+                                <action.icon className={cn(
+                                    'h-5 w-5 transition-colors',
+                                    action.primary 
+                                        ? 'text-black' 
+                                        : 'text-white group-hover:text-black'
+                                )} />
                             </div>
                             <div>
-                                <p className={cn(
-                                    'font-medium flex items-center gap-1',
-                                    action.primary && 'text-primary'
-                                )}>
+                                <p className="font-medium flex items-center gap-1">
                                     {action.title}
                                     <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                                 </p>

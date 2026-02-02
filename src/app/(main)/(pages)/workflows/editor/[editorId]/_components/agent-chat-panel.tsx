@@ -188,38 +188,32 @@ export function AgentChatPanel({ workflowName, nodes, lastExecution }: AgentChat
     }
 
     const getAgentColor = (agentType?: string) => {
-        switch (agentType) {
-            case 'Debugger': return 'bg-red-500/20 text-red-400 border-red-500/30'
-            case 'Optimizer': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-            case 'Explainer': return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-            case 'Advisor': return 'bg-green-500/20 text-green-400 border-green-500/30'
-            default: return 'bg-purple-500/20 text-purple-400 border-purple-500/30'
-        }
+        return 'bg-neutral-800 text-neutral-300 border-neutral-700'
     }
 
     return (
-        <Card className="h-full flex flex-col border-2 border-dashed">
+        <Card className="h-full flex flex-col border border-neutral-800 overflow-hidden">
             {/* Header */}
-            <CardHeader className="pb-2 border-b bg-gradient-to-r from-blue-500/5 to-purple-500/5">
+            <CardHeader className="py-3 px-4 border-b border-neutral-800 bg-neutral-900/50 shrink-0">
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-sm flex items-center gap-2">
-                        <MessageSquare className="h-4 w-4 text-purple-500" />
+                        <MessageSquare className="h-4 w-4" />
                         Agent Chat
                     </CardTitle>
-                    <Badge variant="secondary" className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-400 border-0 text-[10px]">
+                    <Badge className="bg-white text-black border-0 text-[10px]">
                         <Brain className="h-3 w-3 mr-1" />
                         AI-Powered
                     </Badge>
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mt-1">
                     Chat with your workflow agents - understand decisions, debug issues, get suggestions
                 </p>
             </CardHeader>
 
             {/* Messages */}
-            <CardContent className="flex-1 p-0 overflow-hidden">
-                <ScrollArea className="h-[300px] p-3">
-                    <div className="space-y-3">
+            <CardContent className="flex-1 p-0 overflow-hidden min-h-0">
+                <ScrollArea className="h-full">
+                    <div className="space-y-3 p-3">
                         {messages.map((message) => (
                             <div
                                 key={message.id}
@@ -229,16 +223,16 @@ export function AgentChatPanel({ workflowName, nodes, lastExecution }: AgentChat
                                 )}
                             >
                                 {message.role !== 'user' && (
-                                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
-                                        <Bot className="h-3 w-3 text-white" />
+                                    <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center shrink-0">
+                                        <Bot className="h-3 w-3 text-black" />
                                     </div>
                                 )}
                                 <div
                                     className={cn(
                                         "max-w-[85%] rounded-xl p-3",
                                         message.role === 'user'
-                                            ? "bg-primary text-primary-foreground"
-                                            : "bg-muted"
+                                            ? "bg-white text-black"
+                                            : "bg-neutral-800"
                                     )}
                                 >
                                     {message.agentType && (
@@ -259,7 +253,7 @@ export function AgentChatPanel({ workflowName, nodes, lastExecution }: AgentChat
                                     <p className="text-xs whitespace-pre-wrap leading-relaxed">{message.content}</p>
                                 </div>
                                 {message.role === 'user' && (
-                                    <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center shrink-0">
+                                    <div className="w-6 h-6 rounded-full bg-neutral-800 flex items-center justify-center shrink-0">
                                         <User className="h-3 w-3" />
                                     </div>
                                 )}
@@ -268,11 +262,11 @@ export function AgentChatPanel({ workflowName, nodes, lastExecution }: AgentChat
                         
                         {isThinking && (
                             <div className="flex gap-2">
-                                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                                    <Bot className="h-3 w-3 text-white" />
+                                <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center">
+                                    <Bot className="h-3 w-3 text-black" />
                                 </div>
-                                <div className="bg-muted rounded-xl p-3 flex items-center gap-2">
-                                    <Loader2 className="h-3 w-3 animate-spin text-purple-500" />
+                                <div className="bg-neutral-800 rounded-xl p-3 flex items-center gap-2">
+                                    <Loader2 className="h-3 w-3 animate-spin" />
                                     <span className="text-xs text-muted-foreground">Thinking...</span>
                                 </div>
                             </div>
@@ -283,13 +277,13 @@ export function AgentChatPanel({ workflowName, nodes, lastExecution }: AgentChat
             </CardContent>
 
             {/* Quick Actions */}
-            <div className="px-3 py-2 border-t bg-muted/30">
-                <div className="flex gap-1 flex-wrap">
+            <div className="px-3 py-2 border-t border-neutral-800 bg-neutral-900/30 shrink-0">
+                <div className="flex gap-1.5 flex-wrap">
                     {QUICK_ACTIONS.map((action, idx) => (
                         <button
                             key={idx}
                             onClick={() => handleQuickAction(action.action, action.text)}
-                            className="text-[10px] px-2 py-1 rounded-full bg-muted hover:bg-muted/80 transition-colors"
+                            className="text-[10px] px-2.5 py-1.5 rounded-full bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 hover:border-neutral-600 transition-colors"
                         >
                             {action.icon} {action.text}
                         </button>
@@ -298,7 +292,7 @@ export function AgentChatPanel({ workflowName, nodes, lastExecution }: AgentChat
             </div>
 
             {/* Input */}
-            <div className="p-3 border-t">
+            <div className="p-3 border-t border-neutral-800 bg-neutral-900/50 shrink-0">
                 <div className="flex gap-2">
                     <Input
                         ref={inputRef}
@@ -311,19 +305,19 @@ export function AgentChatPanel({ workflowName, nodes, lastExecution }: AgentChat
                             }
                         }}
                         placeholder="Ask your agents anything..."
-                        className="text-xs h-8"
+                        className="text-xs h-9 bg-neutral-900 border-neutral-700 focus:border-neutral-500"
                         disabled={isThinking}
                     />
                     <Button
                         onClick={handleSend}
                         disabled={!input.trim() || isThinking}
                         size="sm"
-                        className="h-8 px-3"
+                        className="h-9 px-4 bg-white text-black hover:bg-neutral-200"
                     >
                         {isThinking ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
+                            <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
-                            <Send className="h-3 w-3" />
+                            <Send className="h-4 w-4" />
                         )}
                     </Button>
                 </div>

@@ -28,21 +28,21 @@ const RecentWorkflows = () => {
 
     if (workflows.length === 0) {
         return (
-            <Card className="border-muted-foreground/20 bg-gradient-to-br from-background to-muted/30">
+            <Card className="border-neutral-800 bg-neutral-900/50">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg">
-                        <GitBranch className="h-5 w-5 text-primary" />
+                        <GitBranch className="h-5 w-5" />
                         Recent Workflows
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-col items-center justify-center py-8 text-center">
-                        <div className="p-4 rounded-full bg-muted/50 mb-4">
+                        <div className="p-4 rounded-full bg-neutral-800 mb-4">
                             <Zap className="h-8 w-8 text-muted-foreground" />
                         </div>
                         <p className="text-muted-foreground mb-4">No workflows yet</p>
                         <Link href="/workflows">
-                            <Button variant="outline" className="gap-2">
+                            <Button variant="outline" className="gap-2 border-neutral-700 hover:bg-neutral-800 hover:border-neutral-600">
                                 Create your first workflow
                                 <ArrowRight className="h-4 w-4" />
                             </Button>
@@ -54,14 +54,14 @@ const RecentWorkflows = () => {
     }
 
     return (
-        <Card className="border-muted-foreground/20 bg-gradient-to-br from-background to-muted/30">
+        <Card className="border-neutral-800 bg-neutral-900/50">
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-lg">
-                    <GitBranch className="h-5 w-5 text-primary" />
+                    <GitBranch className="h-5 w-5" />
                     Recent Workflows
                 </CardTitle>
                 <Link href="/workflows">
-                    <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground hover:text-primary">
+                    <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground hover:text-white">
                         View all
                         <ArrowRight className="h-4 w-4" />
                     </Button>
@@ -76,15 +76,15 @@ const RecentWorkflows = () => {
                     >
                         <div className={cn(
                             'flex items-center justify-between p-4 rounded-lg transition-all duration-200',
-                            'bg-muted/30 hover:bg-muted/50 border border-transparent hover:border-primary/20',
+                            'bg-neutral-800/30 hover:bg-neutral-800/70 border border-neutral-800 hover:border-neutral-700',
                             'group cursor-pointer'
                         )}>
                             <div className="flex items-center gap-4">
-                                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary font-medium">
+                                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-neutral-800 text-white font-medium group-hover:bg-white group-hover:text-black transition-all duration-200">
                                     {index + 1}
                                 </div>
                                 <div>
-                                    <p className="font-medium group-hover:text-primary transition-colors">
+                                    <p className="font-medium group-hover:text-white transition-colors">
                                         {workflow.name}
                                     </p>
                                     <p className="text-sm text-muted-foreground line-clamp-1">
@@ -94,16 +94,12 @@ const RecentWorkflows = () => {
                             </div>
                             <div className="flex items-center gap-3">
                                 <Badge
-                                    variant={workflow.publish ? 'default' : 'secondary'}
-                                    className={cn(
-                                        workflow.publish
-                                            ? 'bg-green-500/10 text-green-500 border-green-500/20'
-                                            : 'bg-muted text-muted-foreground'
-                                    )}
+                                    variant="secondary"
+                                    className="bg-neutral-800 text-neutral-300 border border-neutral-700"
                                 >
                                     {workflow.publish ? 'Published' : 'Draft'}
                                 </Badge>
-                                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-white group-hover:translate-x-1 transition-all" />
                             </div>
                         </div>
                     </Link>
