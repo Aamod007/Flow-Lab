@@ -35,9 +35,9 @@ const AI_PROVIDERS = [
         name: 'Google Gemini',
         description: 'Google\'s advanced multimodal AI models',
         icon: Sparkles,
-        color: 'from-blue-500 to-cyan-500',
-        bgColor: 'bg-blue-500/10',
-        borderColor: 'border-blue-500/30',
+        color: '',
+        bgColor: 'bg-primary/10',
+        borderColor: 'border-muted',
         models: ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.0-pro'],
         pricing: 'Free tier: 60 req/min',
         keyPrefix: 'AIza',
@@ -48,9 +48,9 @@ const AI_PROVIDERS = [
         name: 'OpenAI',
         description: 'GPT-4 and GPT-3.5 models',
         icon: Brain,
-        color: 'from-green-500 to-emerald-500',
-        bgColor: 'bg-green-500/10',
-        borderColor: 'border-green-500/30',
+        color: '',
+        bgColor: 'bg-primary/10',
+        borderColor: 'border-muted',
         models: ['gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'],
         pricing: 'Pay per token',
         keyPrefix: 'sk-',
@@ -61,9 +61,9 @@ const AI_PROVIDERS = [
         name: 'Groq',
         description: 'Ultra-fast inference for Llama models',
         icon: Zap,
-        color: 'from-orange-500 to-amber-500',
-        bgColor: 'bg-orange-500/10',
-        borderColor: 'border-orange-500/30',
+        color: '',
+        bgColor: 'bg-primary/10',
+        borderColor: 'border-muted',
         models: ['llama-3.1-70b-versatile', 'mixtral-8x7b-32768'],
         pricing: 'Free tier available',
         keyPrefix: 'gsk_',
@@ -74,9 +74,9 @@ const AI_PROVIDERS = [
         name: 'Anthropic',
         description: 'Claude AI models for analysis and safety',
         icon: Bot,
-        color: 'from-purple-500 to-pink-500',
-        bgColor: 'bg-purple-500/10',
-        borderColor: 'border-purple-500/30',
+        color: '',
+        bgColor: 'bg-primary/10',
+        borderColor: 'border-muted',
         models: ['claude-3-opus', 'claude-3-sonnet', 'claude-3-haiku'],
         pricing: 'Pay per token',
         keyPrefix: 'sk-ant-',
@@ -87,9 +87,9 @@ const AI_PROVIDERS = [
         name: 'Ollama (Local)',
         description: 'Run open-source models locally - FREE',
         icon: Server,
-        color: 'from-gray-500 to-slate-500',
-        bgColor: 'bg-gray-500/10',
-        borderColor: 'border-gray-500/30',
+        color: '',
+        bgColor: 'bg-primary/10',
+        borderColor: 'border-muted',
         models: ['llama3:8b', 'mistral:7b', 'codellama:13b'],
         pricing: '100% FREE (Local)',
         keyPrefix: '',
@@ -294,10 +294,8 @@ const AiKeysForm = () => {
                     return (
                         <Card
                             key={provider.id}
-                            className={`relative overflow-hidden transition-all duration-300 hover:shadow-lg ${provider.borderColor} border-2`}
+                            className={`relative overflow-hidden transition-all duration-300 hover:shadow-lg ${provider.borderColor} border`}
                         >
-                            {/* Gradient header */}
-                            <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${provider.color}`} />
 
                             <CardHeader className="pb-3">
                                 <div className="flex items-center justify-between">

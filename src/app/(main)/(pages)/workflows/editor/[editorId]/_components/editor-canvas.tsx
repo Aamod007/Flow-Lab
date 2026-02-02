@@ -130,7 +130,7 @@ const EditorCanvas = (props: Props) => {
 
       // Initialize metadata with sensible defaults based on node type
       let initialMetadata: Record<string, any> = {}
-      
+
       // AI nodes and Agent nodes get default AI configuration
       if (type === 'AI' || type.includes('Agent')) {
         initialMetadata = {
@@ -344,12 +344,7 @@ const EditorCanvas = (props: Props) => {
                     onClick={handleClickCanvas}
                     nodeTypes={nodeTypes}
                   >
-                    <MiniMap
-                      position="bottom-left"
-                      className="!bg-background"
-                      zoomable
-                      pannable
-                    />
+
                     <Background
                       //@ts-ignore
                       variant="dots"
@@ -441,7 +436,6 @@ const EditorCanvas = (props: Props) => {
                         </Button>
                       </div>
                     </div>
-
                     {/* Premium Floating Control Panel */}
                     <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-50">
                       <div className="flex items-center gap-1 p-2 bg-background/80 backdrop-blur-md border rounded-full shadow-2xl hover:shadow-primary/20 transition-all duration-300">
@@ -525,6 +519,8 @@ const EditorCanvas = (props: Props) => {
                         </Button>
                       </div>
                     </div>
+
+
                   </ReactFlow>
                 )}
               </div>

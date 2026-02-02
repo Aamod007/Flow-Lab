@@ -222,11 +222,7 @@ const ConnectionCard = ({
                 {isConnected && (
                   <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
                 )}
-                {isTestable && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-blue-500/10 text-blue-500 border-blue-500/30">
-                    API Ready
-                  </Badge>
-                )}
+                {/* API Ready Badge removed */}
               </div>
               <p className="text-xs text-muted-foreground truncate">{description}</p>
             </div>
@@ -258,27 +254,7 @@ const ConnectionCard = ({
           <div className="flex items-center gap-2">
             {isConnected ? (
               <>
-                {isTestable && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 h-8 text-xs gap-1"
-                    onClick={handleTestConnection}
-                    disabled={isTesting}
-                  >
-                    {isTesting ? (
-                      <>
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        Testing...
-                      </>
-                    ) : (
-                      <>
-                        <TestTube className="h-3 w-3" />
-                        Re-test
-                      </>
-                    )}
-                  </Button>
-                )}
+                {/* Re-test button removed */}
                 <Button
                   variant="outline"
                   size="sm"
@@ -308,7 +284,7 @@ const ConnectionCard = ({
                   ) : (
                     <>
                       {isTestable ? <Zap className="h-3 w-3" /> : null}
-                      {isTestable ? 'Test & Connect' : 'Connect'}
+                      Connect
                     </>
                   )}
                 </Button>

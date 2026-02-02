@@ -74,11 +74,11 @@ const AVAILABLE_MODELS = [
 
 type Props = {}
 
-const AgentConfigurationForm = ({}: Props) => {
+const AgentConfigurationForm = ({ }: Props) => {
   const { state, dispatch } = useEditor()
   const nodeType = state.editor.selectedNode.data.title as string
   const preset = AGENT_PRESETS[nodeType] || AGENT_PRESETS['Agent']
-  
+
   const [agentConfig, setAgentConfig] = useState({
     systemPrompt: state.editor.selectedNode.data.metadata?.systemPrompt || preset.systemPrompt,
     model: state.editor.selectedNode.data.metadata?.model || preset.model,
@@ -101,7 +101,7 @@ const AgentConfigurationForm = ({}: Props) => {
         }
       }
     }
-    
+
     dispatch({
       type: 'UPDATE_NODE',
       payload: {
@@ -115,10 +115,10 @@ const AgentConfigurationForm = ({}: Props) => {
   return (
     <div className="space-y-5">
       {/* Agent Type Badge */}
-      <div className="flex items-center gap-2 p-3 rounded-lg bg-[#2F006B]/20 border border-[#7540A9]/30">
-        <Bot className="h-5 w-5 text-[#C8C7FF]" />
+      <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
+        <Bot className="h-5 w-5 text-primary" />
         <div>
-          <p className="text-sm font-medium text-[#C8C7FF]">{nodeType}</p>
+          <p className="text-sm font-medium text-foreground">{nodeType}</p>
           <p className="text-[10px] text-muted-foreground">Specialized AI Agent</p>
         </div>
       </div>

@@ -58,7 +58,7 @@ const EditorCanvasSidebar = ({ nodes }: Props) => {
     <aside>
       <Tabs
         defaultValue="actions"
-        className="h-screen overflow-scroll pb-24"
+        className="h-full overflow-scroll pb-24"
       >
         <TabsList className="bg-transparent">
           <TabsTrigger value="actions">Actions</TabsTrigger>
@@ -151,7 +151,7 @@ const EditorCanvasSidebar = ({ nodes }: Props) => {
                   </div>
                 )}
                 {state.editor.selectedNode.data.title?.includes('Agent') && (
-                  <div className="p-4 bg-[#2F006B]/5">
+                  <div className="p-4 bg-muted/10">
                     <AgentConfigurationForm />
                   </div>
                 )}
