@@ -7,20 +7,7 @@ import { Connection } from '@/lib/types'
 import { useNodeConnections } from '@/providers/connections-provider'
 import { EditorState } from '@/providers/editor-provider'
 import { useFlowLabStore } from '@/store'
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from '@/components/ui/command'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import { CheckIcon, ChevronsUpDown } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 
 
@@ -45,9 +32,6 @@ const RenderConnectionAccordion = ({
   const { slackChannels, selectedSlackChannels, setSelectedSlackChannels } =
     useFlowLabStore()
 
-  const [open, setOpen] = React.useState(false)
-  const [value, setValue] = React.useState('')
-
   const connectionData = (nodeConnection as any)[connectionKey]
 
   const isConnected =
@@ -70,26 +54,27 @@ const RenderConnectionAccordion = ({
             onDisconnect={() => { }}
           />
           {slackSpecial && isConnected && (
-            <div className="p-6">
+            <div className="p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-medium text-neutral-300">Channel</Label>
+                <span className="text-[10px] px-1.5 py-0.5 bg-white text-black rounded font-medium">Required</span>
+              </div>
               {slackChannels?.length ? (
-                <>
-                  <div className="mb-4 ml-1">
-                    Select the slack channels to send notification and messages:
-                  </div>
-                  <MultipleSelector
-                    value={selectedSlackChannels}
-                    onChange={setSelectedSlackChannels}
-                    defaultOptions={slackChannels}
-                    placeholder="Select channels"
-                    emptyIndicator={
-                      <p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">
-                        no results found.
-                      </p>
-                    }
-                  />
-                </>
+                <MultipleSelector
+                  value={selectedSlackChannels}
+                  onChange={setSelectedSlackChannels}
+                  defaultOptions={slackChannels}
+                  placeholder="Select channels"
+                  emptyIndicator={
+                    <p className="text-center text-sm text-neutral-500">
+                      No results found
+                    </p>
+                  }
+                />
               ) : (
-                'No Slack channels found. Please add your Slack bot to your Slack channel'
+                <p className="text-xs text-neutral-500">
+                  No Slack channels found. Add your Slack bot to a channel first.
+                </p>
               )}
             </div>
           )}

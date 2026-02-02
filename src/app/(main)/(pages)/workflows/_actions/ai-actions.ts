@@ -33,7 +33,13 @@ const getAPIKey = async (provider: string): Promise<string | undefined> => {
     }
 
     // 2. Fallback to Env
-    return process.env[`${provider}_API_KEY`]
+    const envKey = process.env[`${provider}_API_KEY`]
+    if (envKey) return envKey
+
+    // Aliases for user convenience
+    if (provider === 'GOOGLE') return process.env.GEMINI_API
+
+    return undefined
 }
 
 export async function testAIAgent(config: {

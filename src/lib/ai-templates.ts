@@ -492,6 +492,102 @@ export const AI_TEMPLATES: AIWorkflowTemplate[] = [
       { from: 'summary-writer', to: 'slack-notifier' },
       { from: 'summary-writer', to: 'notion-logger' }
     ]
+  },
+  {
+    id: 'ai-to-slack-messenger',
+    name: 'AI to Slack Messenger',
+    description: 'Process input with AI and send the response directly to a Slack channel. Perfect for automated notifications, summaries, or AI-generated updates.',
+    category: 'communication',
+    difficulty: 'beginner',
+    estimatedCost: 'FREE (with Groq/Ollama)',
+    executionTime: '10-30 seconds',
+    requiredConnections: ['slack'],
+    icon: '💬',
+    tags: ['slack', 'messaging', 'ai', 'automation', 'notifications'],
+    agents: [
+      {
+        id: 'trigger',
+        name: 'Trigger',
+        type: 'Trigger',
+        role: 'Start the workflow with input',
+        provider: 'groq',
+        model: '',
+        systemPrompt: '',
+        position: { x: 100, y: 200 }
+      },
+      {
+        id: 'ai-processor',
+        name: 'AI Processor',
+        type: 'AI',
+        role: 'Process and enhance the message',
+        provider: 'groq',
+        model: 'llama-3.1-70b-versatile',
+        systemPrompt: 'You are a helpful assistant that processes messages and creates well-formatted responses for Slack. Format your responses to be clear, concise, and use Slack markdown when appropriate (bold with *text*, code with `text`). Keep responses under 500 characters unless more detail is needed.',
+        position: { x: 400, y: 200 }
+      },
+      {
+        id: 'slack-sender',
+        name: 'Slack Sender',
+        type: 'Slack',
+        role: 'Send message to Slack channel',
+        provider: 'slack',
+        model: '',
+        systemPrompt: '',
+        position: { x: 700, y: 200 }
+      }
+    ],
+    connections: [
+      { from: 'trigger', to: 'ai-processor' },
+      { from: 'ai-processor', to: 'slack-sender' }
+    ]
+  },
+  {
+    id: 'slack-ai-responder',
+    name: 'Slack AI Auto-Responder',
+    description: 'Receive a message (simulated), process it with AI for intelligent analysis or response, and send the AI response back to Slack. Great for support bots or automated replies.',
+    category: 'communication',
+    difficulty: 'beginner',
+    estimatedCost: 'FREE (with Groq)',
+    executionTime: '15-45 seconds',
+    requiredConnections: ['slack'],
+    icon: '🤖',
+    tags: ['slack', 'bot', 'ai', 'automation', 'support', 'responder'],
+    agents: [
+      {
+        id: 'slack-trigger',
+        name: 'Message Input',
+        type: 'Trigger',
+        role: 'Receive incoming message',
+        provider: 'slack',
+        model: '',
+        systemPrompt: '',
+        position: { x: 100, y: 200 }
+      },
+      {
+        id: 'ai-analyzer',
+        name: 'AI Analyzer',
+        type: 'AI',
+        role: 'Analyze and respond intelligently',
+        provider: 'groq',
+        model: 'llama-3.1-70b-versatile',
+        systemPrompt: 'You are a helpful AI assistant responding to Slack messages. Analyze the incoming message and provide a helpful, friendly response. Be concise but thorough. If it\'s a question, answer it. If it\'s a request, acknowledge and assist. Use Slack formatting: *bold*, _italic_, `code`. Keep responses professional and helpful.',
+        position: { x: 400, y: 200 }
+      },
+      {
+        id: 'slack-responder',
+        name: 'Slack Response',
+        type: 'Slack',
+        role: 'Send AI response to channel',
+        provider: 'slack',
+        model: '',
+        systemPrompt: '',
+        position: { x: 700, y: 200 }
+      }
+    ],
+    connections: [
+      { from: 'slack-trigger', to: 'ai-analyzer' },
+      { from: 'ai-analyzer', to: 'slack-responder' }
+    ]
   }
 ]
 

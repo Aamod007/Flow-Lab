@@ -5,7 +5,12 @@ import { testAIAgent } from './ai-actions'
 import { onCreateNewPageInDatabase } from '@/app/(main)/(pages)/connections/_actions/notion-connection'
 import { postMessageToSlack } from '@/app/(main)/(pages)/connections/_actions/slack-connection'
 
-export const onExecuteWorkflow = async (nodesStr: string, edgesStr: string, selectedSlackChannels?: { label: string; value: string }[]): Promise<{ success: boolean; message: string; logs: string[] }> => {
+export const onExecuteWorkflow = async (
+    nodesStr: string, 
+    edgesStr: string, 
+    selectedSlackChannels?: { label: string; value: string }[],
+    userInput?: string
+): Promise<{ success: boolean; message: string; logs: string[] }> => {
     const logs: string[] = []
     logs.push(`Starting execution...`)
 
@@ -32,8 +37,16 @@ export const onExecuteWorkflow = async (nodesStr: string, edgesStr: string, sele
         logs.push(`Starting at node: ${startNode.data.title} (${startNode.type})`)
 
         let currentNode = startNode
-        let currentInput = { content: 'Hello World from Test Run' } // Default mock input
+        // Use user-provided input or a default placeholder
+        let currentInput = { content: userInput || '' }
         let steps = 0
+
+        // If no user input provided, show a helpful message
+        if (!userInput || userInput.trim() === '') {
+            logs.push(`⚠️ No input provided - using empty input. Provide input when running the workflow for real data.`)
+        } else {
+            logs.push(`📥 Input received: "${userInput.substring(0, 100)}${userInput.length > 100 ? '...' : ''}"`)
+        }
 
         while (currentNode && steps < 20) { // Safety limit
             steps++
@@ -84,9 +97,42 @@ export const onExecuteWorkflow = async (nodesStr: string, edgesStr: string, sele
                 case 'AI':
                     // Run AI Agent
                     // Build AI config with defaults for missing values
+                    const provider = metadata.provider || 'Groq'  // Default to Groq (Free)
+                    
+                    // Get the right default model for the provider
+                    const getDefaultModel = (prov: string) => {
+                        switch (prov) {
+                            case 'Google Gemini': return 'gemini-1.5-flash'
+                            case 'OpenAI': return 'gpt-4o-mini'
+                            case 'Anthropic': return 'claude-3-haiku-20240307'
+                            case 'Groq': return 'llama-3.1-70b-versatile'
+                            case 'Ollama': return 'llama3.2'
+                            default: return 'llama-3.1-70b-versatile'
+                        }
+                    }
+                    
+                    // Check if model is valid for the provider
+                    const isModelValidForProvider = (model: string, prov: string): boolean => {
+                        const providerModels: Record<string, string[]> = {
+                            'Google Gemini': ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-pro'],
+                            'OpenAI': ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo', 'o1', 'o1-mini', 'o3-mini'],
+                            'Anthropic': ['claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307', 'claude-3-opus-20240229'],
+                            'Groq': ['llama-3.1-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768', 'llama-3.3-70b-versatile'],
+                            'Ollama': ['llama3.2', 'llama3.1', 'mistral', 'codellama', 'phi3']
+                        }
+                        const validModels = providerModels[prov] || []
+                        return validModels.some(m => model.includes(m) || m.includes(model))
+                    }
+                    
+                    // Use saved model only if it's valid for the provider, otherwise use default
+                    const savedModel = metadata.model
+                    const model = (savedModel && isModelValidForProvider(savedModel, provider)) 
+                        ? savedModel 
+                        : getDefaultModel(provider)
+                    
                     const aiConfig = {
-                        provider: metadata.provider || 'Groq',           // Default to free Groq
-                        model: metadata.model || 'llama-3.1-70b-versatile',
+                        provider,
+                        model,
                         prompt: metadata.prompt || '',
                         systemPrompt: metadata.systemPrompt || 'You are a helpful assistant.',
                         temperature: metadata.temperature ?? 0.7,

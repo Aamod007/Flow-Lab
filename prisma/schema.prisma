@@ -35,6 +35,8 @@ model User {
   costTracking          CostTracking[]
   ollamaModels          OllamaModel[]
   executionLogs         ExecutionLog[]
+  budgetSettings        BudgetSettings?
+  aiAgentConfigs        AIAgentConfig[]
 }
 
 model LocalGoogleCredential {
@@ -225,6 +227,23 @@ model AIAgentConfig {
   isDefault   Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [clerkId])
   
   @@unique([userId, name])
+}
+
+// Budget settings for AI cost control
+model BudgetSettings {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  monthlyLimit    Float    @default(50.0)
+  alertAt80       Boolean  @default(true)
+  alertAt100      Boolean  @default(true)
+  actionOnLimit   String   @default("NOTIFY") // "NOTIFY", "PAUSE_ALL", "PAUSE_PAID"
+  gracePeriodDays Int      @default(1)
+  emailAlerts     Boolean  @default(true)
+  slackAlerts     Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [clerkId])
 }

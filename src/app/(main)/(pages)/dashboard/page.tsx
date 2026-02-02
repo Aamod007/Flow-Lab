@@ -72,95 +72,97 @@ const DashboardPage = () => {
     <div className="flex flex-col gap-6 relative">
       <h1 className="text-4xl sticky top-0 z-[10] p-6 bg-background/50 backdrop-blur-lg flex items-center border-b">
         Dashboard
-        <Badge variant="secondary" className="ml-3 text-xs font-normal">
-          <Sparkles className="h-3 w-3 mr-1" />
-          FlowLab AI
-        </Badge>
       </h1>
 
       <div className="flex flex-col gap-6 p-6 pt-0">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatsCard
-            title="Total Workflows"
-            value={workflows.length}
-            description="Automations created"
-            icon={GitBranch}
-          />
-          <StatsCard
-            title="Active Workflows"
-            value={publishedCount}
-            description={`${draftCount} drafts`}
-            icon={Zap}
-            iconClassName="bg-green-500/10"
-          />
-          <StatsCard
-            title="AI Executions"
-            value={aiStats.totalExecutions}
-            description="This month"
-            icon={Bot}
-            iconClassName="bg-blue-500/10"
-          />
-          <StatsCard
-            title="Connections"
-            value={4}
-            description="Integrations available"
-            icon={Plug}
-            iconClassName="bg-orange-500/10"
-          />
+        {/* Top Row - Stats + Quick Actions side by side */}
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+          {/* Left: 2x2 Stats Grid */}
+          <div className="xl:col-span-3 grid grid-cols-2 gap-4">
+            <StatsCard
+              title="Total Workflows"
+              value={workflows.length}
+              description="Automations created"
+              icon={GitBranch}
+            />
+            <StatsCard
+              title="Active Workflows"
+              value={publishedCount}
+              description={`${draftCount} drafts`}
+              icon={Zap}
+            />
+            <StatsCard
+              title="AI Executions"
+              value={aiStats.totalExecutions}
+              description="This month"
+              icon={Bot}
+            />
+            <StatsCard
+              title="Connections"
+              value={4}
+              description="Integrations available"
+              icon={Plug}
+            />
+          </div>
+
+          {/* Right: Quick Actions */}
+          <div className="xl:col-span-2">
+            <QuickActions />
+          </div>
         </div>
 
-        {/* AI Cost Tracking Card */}
-        <Card className="bg-gradient-to-br from-primary/5 via-background to-blue-500/5 border-primary/20">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-500" />
-              AI Cost Tracker
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-3 rounded-lg bg-background/50">
-                <p className="text-2xl font-bold text-green-500">
-                  ${aiStats.estimatedCost.toFixed(2)}
-                </p>
-                <p className="text-xs text-muted-foreground">Total Spent (Month)</p>
-              </div>
-              <div className="p-3 rounded-lg bg-background/50">
-                <p className="text-2xl font-bold text-blue-500">
-                  {(aiStats.tokensUsed / 1000).toFixed(0)}K
-                </p>
-                <p className="text-xs text-muted-foreground">Tokens Used</p>
-              </div>
-              <div className="p-3 rounded-lg bg-background/50">
-                <p className="text-2xl font-bold text-purple-500">
-                  ${aiStats.savedByLocal.toFixed(2)}
-                </p>
-                <p className="text-xs text-muted-foreground">Saved with Ollama</p>
-              </div>
-              <div className="p-3 rounded-lg bg-background/50">
-                <div className="flex items-center gap-1">
-                  <TrendingUp className="h-4 w-4 text-green-500" />
-                  <p className="text-2xl font-bold">
-                    {((aiStats.savedByLocal / (aiStats.estimatedCost + aiStats.savedByLocal || 1)) * 100).toFixed(0)}%
-                  </p>
-                </div>
-                <p className="text-xs text-muted-foreground">Cost Savings</p>
-              </div>
+        {/* Middle Row - AI Cost Tracker (compact horizontal bar) */}
+        <div className="grid grid-cols-4 gap-4 p-4 rounded-xl border border-neutral-800 bg-neutral-900/50">
+          <div className="flex items-center gap-4 px-4 py-2 rounded-lg bg-neutral-800/30 hover:bg-neutral-800/60 transition-colors group cursor-default">
+            <div className="p-2 rounded-lg bg-white">
+              <DollarSign className="h-5 w-5 text-black" />
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <RecentWorkflows />
+            <div>
+              <p className="text-xl font-bold group-hover:scale-105 transition-transform origin-left">
+                ${aiStats.estimatedCost.toFixed(2)}
+              </p>
+              <p className="text-xs text-muted-foreground">Spent this month</p>
+            </div>
           </div>
-
-          <div className="flex flex-col gap-6">
-            <QuickActions />
-            <ActivityFeed />
+          <div className="flex items-center gap-4 px-4 py-2 rounded-lg bg-neutral-800/30 hover:bg-neutral-800/60 transition-colors group cursor-default">
+            <div className="p-2 rounded-lg bg-neutral-800">
+              <Bot className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xl font-bold group-hover:scale-105 transition-transform origin-left">
+                {(aiStats.tokensUsed / 1000).toFixed(0)}K
+              </p>
+              <p className="text-xs text-muted-foreground">Tokens used</p>
+            </div>
           </div>
+          <div className="flex items-center gap-4 px-4 py-2 rounded-lg bg-neutral-800/30 hover:bg-neutral-800/60 transition-colors group cursor-default">
+            <div className="p-2 rounded-lg bg-neutral-800">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xl font-bold group-hover:scale-105 transition-transform origin-left">
+                ${aiStats.savedByLocal.toFixed(2)}
+              </p>
+              <p className="text-xs text-muted-foreground">Saved with Ollama</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 px-4 py-2 rounded-lg bg-neutral-800/30 hover:bg-neutral-800/60 transition-colors group cursor-default">
+            <div className="p-2 rounded-lg bg-neutral-800">
+              <TrendingUp className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xl font-bold group-hover:scale-105 transition-transform origin-left">
+                {((aiStats.savedByLocal / (aiStats.estimatedCost + aiStats.savedByLocal || 1)) * 100).toFixed(0)}%
+              </p>
+              <p className="text-xs text-muted-foreground">Cost savings</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Row - Recent Workflows + Activity Feed */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <RecentWorkflows />
+          <ActivityFeed />
         </div>
       </div>
     </div>

@@ -52,20 +52,27 @@ export function BudgetControls() {
 
   useEffect(() => {
     fetchSettings()
-    fetchCurrentUsage()
   }, [])
 
   const fetchSettings = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/analytics/cost?period=month')
+      const response = await fetch('/api/analytics/budget')
       if (response.ok) {
         const data = await response.json()
-        if (data.budget) {
-          setSettings(prev => ({
-            ...prev,
-            monthlyLimit: data.budget.limit
-          }))
+        if (data.settings) {
+          setSettings({
+            monthlyLimit: data.settings.monthlyLimit ?? 50,
+            alertAt80: data.settings.alertAt80 ?? true,
+            alertAt100: data.settings.alertAt100 ?? true,
+            actionOnLimit: data.settings.actionOnLimit ?? 'NOTIFY',
+            gracePeriodDays: data.settings.gracePeriodDays ?? 1,
+            emailAlerts: data.settings.emailAlerts ?? true,
+            slackAlerts: data.settings.slackAlerts ?? false
+          })
+        }
+        if (data.usage) {
+          setCurrentUsage(data.usage.currentUsage)
         }
       }
     } catch (error) {
@@ -75,24 +82,20 @@ export function BudgetControls() {
     }
   }
 
-  const fetchCurrentUsage = async () => {
-    try {
-      const response = await fetch('/api/analytics/cost?period=month')
-      if (response.ok) {
-        const data = await response.json()
-        setCurrentUsage(data.total || 0)
-      }
-    } catch (error) {
-      console.error('Failed to fetch usage:', error)
-    }
-  }
 
   const handleSave = async () => {
     try {
       setSaving(true)
-      // In a real implementation, this would POST to an API endpoint
-      // For now, we'll just simulate the save
-      await new Promise(resolve => setTimeout(resolve, 500))
+      const response = await fetch('/api/analytics/budget', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings)
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to save')
+      }
+      
       toast.success('Budget settings saved successfully')
     } catch (error) {
       toast.error('Failed to save settings')

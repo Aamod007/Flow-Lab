@@ -43,15 +43,12 @@ const Page = (props: Props) => {
                 className={cn(
                   "gap-2 rounded-md transition-all",
                   activeTab === 'ai-builder' 
-                    ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg" 
+                    ? "bg-white text-black shadow-sm" 
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 <Wand2 className="h-4 w-4" />
                 AI Builder
-                <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0 bg-yellow-500/20 text-yellow-400 border-0">
-                  NEW
-                </Badge>
               </Button>
             </div>
           </div>
@@ -62,8 +59,8 @@ const Page = (props: Props) => {
         {activeTab === 'ai-builder' && (
           <div className="px-6 pb-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Sparkles className="h-4 w-4 text-purple-500" />
-              <span>n8n can't do this! Describe your workflow in plain English and let AI build it.</span>
+              <Sparkles className="h-4 w-4" />
+              <span>Describe your workflow in plain English and let AI build it.</span>
             </div>
           </div>
         )}

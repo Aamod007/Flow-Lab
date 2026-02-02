@@ -20,7 +20,9 @@ import {
     Send,
     RefreshCw,
     Copy,
-    Play
+    Play,
+    DollarSign,
+    Clock
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -315,10 +317,10 @@ export function AIWorkflowBuilder() {
     return (
         <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="p-6 border-b bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-orange-500/10">
+            <div className="p-6 border-b bg-neutral-900/50">
                 <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg">
-                        <Wand2 className="h-6 w-6 text-white" />
+                    <div className="p-2 rounded-xl bg-white shadow-sm">
+                        <Wand2 className="h-6 w-6 text-black" />
                     </div>
                     <div>
                         <h2 className="text-xl font-bold">AI Workflow Builder</h2>
@@ -327,10 +329,6 @@ export function AIWorkflowBuilder() {
                         </p>
                     </div>
                 </div>
-                <Badge variant="secondary" className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-400 border-purple-500/30">
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    Powered by AI
-                </Badge>
             </div>
 
             {/* Chat Area */}
@@ -355,7 +353,7 @@ export function AIWorkflowBuilder() {
                                 <button
                                     key={idx}
                                     onClick={() => handleExampleClick(example)}
-                                    className="w-full text-left p-3 rounded-lg border bg-card hover:bg-muted/50 hover:border-primary/50 transition-all text-sm group"
+                                    className="w-full text-left p-3 rounded-lg border border-neutral-800 bg-card hover:bg-neutral-800 hover:border-neutral-700 transition-all text-sm group"
                                 >
                                     <span className="text-muted-foreground group-hover:text-foreground transition-colors">
                                         "{example}"
@@ -370,7 +368,7 @@ export function AIWorkflowBuilder() {
                                 <Badge
                                     key={idx}
                                     variant="outline"
-                                    className="cursor-pointer hover:bg-primary/10 hover:border-primary/50 transition-all"
+                                    className="cursor-pointer hover:bg-neutral-800 hover:border-neutral-700 transition-all"
                                     onClick={() => handleExampleClick(`Create a workflow for ${suggestion.text}`)}
                                 >
                                     {suggestion.icon} {suggestion.text}
@@ -391,12 +389,12 @@ export function AIWorkflowBuilder() {
                                 {message.role !== 'user' && (
                                     <div className={cn(
                                         "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-                                        message.role === 'system' ? "bg-yellow-500/20" : "bg-purple-500/20"
+                                        message.role === 'system' ? "bg-neutral-800" : "bg-neutral-800"
                                     )}>
                                         {message.role === 'system' ? (
-                                            <Loader2 className="h-4 w-4 text-yellow-500 animate-spin" />
+                                            <Loader2 className="h-4 w-4 text-white animate-spin" />
                                         ) : (
-                                            <Bot className="h-4 w-4 text-purple-500" />
+                                            <Bot className="h-4 w-4 text-white" />
                                         )}
                                     </div>
                                 )}
@@ -404,58 +402,89 @@ export function AIWorkflowBuilder() {
                                     className={cn(
                                         "max-w-[80%] rounded-2xl p-4",
                                         message.role === 'user'
-                                            ? "bg-primary text-primary-foreground"
+                                            ? "bg-white text-black"
                                             : message.role === 'system'
-                                                ? "bg-yellow-500/10 border border-yellow-500/30"
-                                                : "bg-muted"
+                                                ? "bg-neutral-800 border border-neutral-700"
+                                                : "bg-neutral-800"
                                     )}
                                 >
-                                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                                    <p 
+                                        className="text-sm whitespace-pre-wrap"
+                                        dangerouslySetInnerHTML={{
+                                            __html: message.content
+                                                .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-white">$1</strong>')
+                                                .replace(/\n/g, '<br />')
+                                        }}
+                                    />
                                     
                                     {/* Workflow Preview */}
                                     {message.workflowPreview && (
-                                        <div className="mt-4 p-4 rounded-xl bg-background/50 border space-y-3">
-                                            <div className="flex items-center justify-between">
-                                                <h4 className="font-semibold text-sm">{message.workflowPreview.name}</h4>
-                                                <Badge variant="secondary" className="text-xs">
+                                        <div className="mt-4 rounded-xl bg-neutral-900 border border-neutral-700 overflow-hidden">
+                                            {/* Header */}
+                                            <div className="p-4 border-b border-neutral-700 flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center">
+                                                        <Zap className="h-5 w-5 text-black" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-semibold text-white">{message.workflowPreview.name}</h4>
+                                                        <p className="text-xs text-neutral-400">{message.workflowPreview.description}</p>
+                                                    </div>
+                                                </div>
+                                                <Badge className="bg-neutral-800 text-neutral-300 border border-neutral-600">
                                                     {message.workflowPreview.nodes.length} nodes
                                                 </Badge>
                                             </div>
                                             
-                                            {/* Node Preview */}
-                                            <div className="flex flex-wrap gap-2">
-                                                {message.workflowPreview.nodes.map((node, idx) => (
-                                                    <React.Fragment key={node.id}>
-                                                        <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-muted text-xs">
-                                                            <span className="font-medium">{node.type}</span>
-                                                        </div>
-                                                        {idx < message.workflowPreview!.nodes.length - 1 && (
-                                                            <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                                                        )}
-                                                    </React.Fragment>
-                                                ))}
+                                            {/* Node Flow Preview */}
+                                            <div className="p-4 bg-neutral-950/50">
+                                                <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                                                    {message.workflowPreview.nodes.map((node, idx) => (
+                                                        <React.Fragment key={node.id}>
+                                                            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-800 border border-neutral-700 shrink-0 hover:border-neutral-500 transition-colors">
+                                                                <div className="w-6 h-6 rounded bg-neutral-700 flex items-center justify-center text-xs font-medium">
+                                                                    {idx + 1}
+                                                                </div>
+                                                                <span className="text-sm font-medium text-white">{node.type}</span>
+                                                            </div>
+                                                            {idx < message.workflowPreview!.nodes.length - 1 && (
+                                                                <ArrowRight className="h-4 w-4 text-neutral-500 shrink-0" />
+                                                            )}
+                                                        </React.Fragment>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Stats Row */}
+                                            <div className="px-4 py-3 border-t border-neutral-700 flex items-center gap-6 text-xs text-neutral-400">
+                                                <div className="flex items-center gap-1.5">
+                                                    <DollarSign className="h-3.5 w-3.5" />
+                                                    <span>{message.workflowPreview.estimatedCost}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <Clock className="h-3.5 w-3.5" />
+                                                    <span>{message.workflowPreview.estimatedTime}</span>
+                                                </div>
                                             </div>
 
                                             {/* Actions */}
-                                            <div className="flex gap-2 pt-2">
+                                            <div className="p-4 border-t border-neutral-700 flex gap-3">
                                                 <Button
-                                                    size="sm"
                                                     onClick={handleCreateWorkflow}
-                                                    className="gap-1"
+                                                    className="flex-1 bg-white text-black hover:bg-neutral-200 gap-2"
                                                 >
-                                                    <Play className="h-3 w-3" />
+                                                    <Play className="h-4 w-4" />
                                                     Create Workflow
                                                 </Button>
                                                 <Button
-                                                    size="sm"
                                                     variant="outline"
                                                     onClick={() => {
                                                         navigator.clipboard.writeText(JSON.stringify(message.workflowPreview, null, 2))
                                                         toast.success('Copied to clipboard')
                                                     }}
-                                                    className="gap-1"
+                                                    className="border-neutral-700 hover:bg-neutral-800 gap-2"
                                                 >
-                                                    <Copy className="h-3 w-3" />
+                                                    <Copy className="h-4 w-4" />
                                                     Copy JSON
                                                 </Button>
                                             </div>

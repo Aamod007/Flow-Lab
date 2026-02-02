@@ -29,14 +29,14 @@ const StatsCard = ({
 }: Props) => {
     return (
         <Card className={cn(
-            'relative overflow-hidden border-muted-foreground/20 bg-gradient-to-br from-background to-muted/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/30',
+            'relative overflow-hidden border-neutral-800 bg-neutral-900/50 transition-all duration-300 hover:bg-neutral-800/50 hover:border-neutral-700 group cursor-default',
             className
         )}>
             <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                     <div className="flex flex-col gap-1">
                         <p className="text-sm font-medium text-muted-foreground">{title}</p>
-                        <p className="text-3xl font-bold tracking-tight">{value}</p>
+                        <p className="text-3xl font-bold tracking-tight group-hover:scale-105 transition-transform origin-left">{value}</p>
                         {description && (
                             <p className="text-xs text-muted-foreground mt-1">{description}</p>
                         )}
@@ -44,7 +44,7 @@ const StatsCard = ({
                             <div className="flex items-center gap-1 mt-2">
                                 <span className={cn(
                                     'text-xs font-medium',
-                                    trend.isPositive ? 'text-green-500' : 'text-red-500'
+                                    trend.isPositive ? 'text-white' : 'text-neutral-400'
                                 )}>
                                     {trend.isPositive ? '+' : '-'}{Math.abs(trend.value)}%
                                 </span>
@@ -53,14 +53,12 @@ const StatsCard = ({
                         )}
                     </div>
                     <div className={cn(
-                        'p-3 rounded-xl bg-primary/10',
+                        'p-3 rounded-xl bg-white transition-transform group-hover:scale-110',
                         iconClassName
                     )}>
-                        <Icon className="h-6 w-6 text-primary" />
+                        <Icon className="h-6 w-6 text-black" />
                     </div>
                 </div>
-                {/* Decorative gradient */}
-                <div className="absolute -bottom-4 -right-4 w-24 h-24 rounded-full bg-gradient-to-br from-primary/10 to-transparent blur-2xl" />
             </CardContent>
         </Card>
     )
