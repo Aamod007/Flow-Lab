@@ -1,0 +1,230 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id Int @id @default(autoincrement())
+
+  clerkId      String  @unique
+  name         String?
+  email        String  @unique
+  profileImage String?
+  tier         String? @default("Free")
+  credits      String? @default("10")
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  localGoogleId    String?  @unique
+  googleResourceId String?  @unique
+
+  LocalGoogleCredential LocalGoogleCredential?
+  DiscordWebhook        DiscordWebhook[]
+  Notion                Notion[]
+  Slack                 Slack[]
+  connections           Connections[]
+  workflows             Workflows[]
+  apiKeys               ApiKey[]
+  costTracking          CostTracking[]
+  ollamaModels          OllamaModel[]
+  executionLogs         ExecutionLog[]
+}
+
+model LocalGoogleCredential {
+  id          String @id @default(uuid())
+  accessToken String @unique
+
+  folderId   String?
+  pageToken  String?
+  channelId  String  @unique @default(uuid())
+  subscribed Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id])
+}
+
+model DiscordWebhook {
+  id          String        @id @default(uuid())
+  webhookId   String        @unique
+  url         String        @unique
+  name        String
+  guildName   String
+  guildId     String
+  channelId   String        @unique
+  user        User          @relation(fields: [userId], references: [clerkId])
+  userId      String
+  connections Connections[]
+}
+
+model Slack {
+  id String @id @default(uuid())
+
+  appId            String
+  authedUserId     String
+  authedUserToken  String @unique
+  slackAccessToken String @unique
+  botUserId        String
+  teamId           String
+  teamName         String
+
+  User        User          @relation(fields: [userId], references: [clerkId])
+  userId      String
+  connections Connections[]
+}
+
+model Notion {
+  id            String        @id @default(uuid())
+  accessToken   String        @unique
+  workspaceId   String        @unique
+  databaseId    String        @unique
+  workspaceName String
+  workspaceIcon String
+  User          User          @relation(fields: [userId], references: [clerkId])
+  userId        String
+  connections   Connections[]
+}
+
+model Connections {
+  id               String          @id @default(uuid())
+  type             String
+  DiscordWebhook   DiscordWebhook? @relation(fields: [discordWebhookId], references: [id])
+  discordWebhookId String?
+  Notion           Notion?         @relation(fields: [notionId], references: [id])
+  notionId         String?
+  User             User?           @relation(fields: [userId], references: [clerkId])
+  userId           String?
+  Slack            Slack?          @relation(fields: [slackId], references: [id])
+  slackId          String?
+}
+
+model Workflows {
+  id                String   @id @default(uuid())
+  nodes             String?
+  edges             String?
+  name              String
+  discordTemplate   String?
+  notionTemplate    String?
+  slackTemplate     String?
+  slackChannels     String[]
+  slackAccessToken  String?
+  notionAccessToken String?
+  notionDbId        String?
+  flowPath          String?
+  cronPath          String?
+  publish           Boolean? @default(false)
+  description       String
+  User              User     @relation(fields: [userId], references: [clerkId])
+  userId            String
+  schedules         Schedule[]
+  executionLogs     ExecutionLog[]
+}
+
+model ApiKey {
+  id        String   @id @default(uuid())
+  provider  String
+  key       String
+  isActive  Boolean  @default(true)
+  User      User     @relation(fields: [userId], references: [clerkId])
+  userId    String
+  
+  @@unique([userId, provider])
+}
+
+model Schedule {
+  id          String    @id @default(uuid())
+  workflowId  String
+  workflow    Workflows @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  type        String    // "CRON", "INTERVAL", "EVENT"
+  definition  String    // JSON string for details
+  active      Boolean   @default(true)
+  lastRun     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model ExecutionLog {
+  id          String    @id @default(uuid())
+  workflowId  String
+  workflow    Workflows @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  userId      String?
+  User        User?     @relation(fields: [userId], references: [clerkId])
+  status      String    // "RUNNING", "COMPLETED", "FAILED"
+  startTime   DateTime  @default(now())
+  endTime     DateTime?
+  duration    Int?      // milliseconds
+  totalCost   Float?    @default(0.0)
+  creditsUsed Int?      @default(0)
+  logs        String?   // JSON string of detailed logs
+  input       String?   // JSON
+  output      String?   // JSON
+  error       String?
+  // AgentFlow additions
+  events      String?   // JSON array of ExecutionEvent objects
+  reasoning   String?   // JSON array of AI reasoning steps
+  nodeResults String?   // JSON map of nodeId -> result
+  metrics     String?   // JSON with tokens, costs, timing per node
+}
+
+model CostTracking {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [clerkId])
+  month       String   // "YYYY-MM"
+  totalCost   Float    @default(0.0)
+  limit       Float?
+  alertsSent  Boolean  @default(false)
+  breakdown   String?  // JSON
+  // AgentFlow additions
+  budget        Float?   @default(50.0)  // Monthly budget in USD
+  warnThreshold Float?   @default(0.7)   // Warning at 70% 
+  critThreshold Float?   @default(0.9)   // Critical at 90%
+  emailAlerts   Boolean  @default(true)
+  slackAlerts   Boolean  @default(false)
+  
+  @@unique([userId, month])
+}
+
+model OllamaModel {
+  id          String    @id @default(uuid())
+  name        String
+  size        String
+  downloaded  Boolean   @default(false)
+  lastUsed    DateTime?
+  specs       String?   // JSON
+  userId      String
+  User        User      @relation(fields: [userId], references: [clerkId])
+  // AgentFlow additions
+  benchmarks  String?   // JSON with speed/quality benchmarks
+  tokensUsed  Int?      @default(0)
+  avgLatency  Float?    // milliseconds per token
+  
+  @@unique([userId, name])
+}
+
+// New model for storing AI agent configurations
+model AIAgentConfig {
+  id          String   @id @default(uuid())
+  name        String
+  provider    String
+  model       String
+  systemPrompt String?
+  temperature Float    @default(0.7)
+  maxTokens   Int      @default(1000)
+  config      String?  // JSON for additional settings
+  userId      String
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([userId, name])
+}
