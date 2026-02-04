@@ -7,7 +7,6 @@ import { NextRequest } from 'next/server'
 // Google Drive notification webhook - demo mode without database
 
 export async function POST(req: NextRequest) {
-  console.log('🔴 Google Drive change notification received')
   const headersList = headers()
   let channelResourceId: string | undefined
 
@@ -18,7 +17,7 @@ export async function POST(req: NextRequest) {
   })
 
   if (channelResourceId) {
-    console.log('Channel Resource ID:', channelResourceId)
+    // Process the notification
     // In demo mode, we just log the notification
     // A real implementation would fetch workflows from database
     return Response.json(

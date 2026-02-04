@@ -61,7 +61,6 @@ const ContentBasedOnTitle = ({
             '/api/drive'
           )
           if (response) {
-            console.log(response.data.message.files[0])
             toast.message("Fetched File")
             setFile(response.data.message.files[0])
           }

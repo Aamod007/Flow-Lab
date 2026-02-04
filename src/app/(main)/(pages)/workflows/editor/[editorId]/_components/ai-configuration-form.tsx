@@ -274,9 +274,10 @@ const AIConfigurationForm = ({ nodeConnection }: Props) => {
                             toast.error(response.data || 'Test failed', { id: toastId })
                             handleChange('testResult', `Error: ${response.data}`)
                         }
-                    } catch (e: any) {
-                        toast.error(e.message || 'Test failed', { id: toastId })
-                        handleChange('testResult', `Error: ${e.message}`)
+                    } catch (e) {
+                        const errorMessage = e instanceof Error ? e.message : 'Test failed'
+                        toast.error(errorMessage, { id: toastId })
+                        handleChange('testResult', `Error: ${errorMessage}`)
                     }
                 }}
                 className="w-full bg-white text-black hover:bg-neutral-200 text-sm h-9 font-medium"

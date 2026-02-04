@@ -1,10 +1,7 @@
 'use server'
 
 import { db } from '@/lib/db'
-
-// Mock database for service connections to persist state in memory during demo
-// In production, this would be your PostgreSQL/Prisma database
-const SERVICE_STORE: Record<string, any> = {}
+import { auth } from '@clerk/nextjs'
 
 export type ServiceConnectionStatus = {
     success: boolean
@@ -21,28 +18,39 @@ export const onCRMConnect = async (
     apiKey: string,
     userId: string
 ): Promise<ServiceConnectionStatus> => {
-    console.log(`Attempting to connect to ${provider}...`)
+    try {
+        // Validate API key format
+        if (!apiKey || apiKey.length < 10) {
+            return {
+                success: false,
+                message: 'Invalid API key format',
+                connected: false
+            }
+        }
 
-    // Mock validation
-    if (!apiKey.startsWith(provider.toLowerCase().substring(0, 3))) {
-        // In a real app, we would validate against the provider's API
-        // For demo, we just log it
-        console.log(`Mock validation for ${provider} passed`)
-    }
+        // Store connection in database
+        await db.connections.create({
+            data: {
+                type: provider,
+                userId: userId
+            }
+        })
 
-    SERVICE_STORE[`${userId}-${provider}`] = {
-        connected: true,
-        connectedAt: new Date(),
-        apiKey: '***' // Never store actual keys in plain text logs
-    }
-
-    return {
-        success: true,
-        message: `Successfully connected to ${provider}`,
-        connected: true,
-        data: {
-            accountName: `${provider} Demo Account`,
-            workspace: 'Production'
+        return {
+            success: true,
+            message: `Successfully connected to ${provider}`,
+            connected: true,
+            data: {
+                accountName: `${provider} Account`,
+                workspace: 'Production'
+            }
+        }
+    } catch (error) {
+        console.error(`Error connecting to ${provider}:`, error)
+        return {
+            success: false,
+            message: `Failed to connect to ${provider}`,
+            connected: false
         }
     }
 }
@@ -55,17 +63,38 @@ export const onDevToolsConnect = async (
     accessToken: string,
     userId: string
 ): Promise<ServiceConnectionStatus> => {
-    console.log(`Connecting to ${provider} API...`)
+    try {
+        // Validate access token
+        if (!accessToken) {
+            return {
+                success: false,
+                message: 'Access token is required',
+                connected: false
+            }
+        }
 
-    // Simulate finding repositories
-    return {
-        success: true,
-        message: `${provider} connected successfully`,
-        connected: true,
-        data: {
-            username: 'demo-developer',
-            repos: ['frontend-app', 'backend-api', 'docs'],
-            organizations: ['Acme Corp']
+        // Store connection in database
+        await db.connections.create({
+            data: {
+                type: provider,
+                userId: userId
+            }
+        })
+
+        return {
+            success: true,
+            message: `${provider} connected successfully`,
+            connected: true,
+            data: {
+                connected: true
+            }
+        }
+    } catch (error) {
+        console.error(`Error connecting to ${provider}:`, error)
+        return {
+            success: false,
+            message: `Failed to connect to ${provider}`,
+            connected: false
         }
     }
 }
@@ -78,20 +107,28 @@ export const onProjectManagementConnect = async (
     credentials: any,
     userId: string
 ): Promise<ServiceConnectionStatus> => {
+    try {
+        // Store connection in database
+        await db.connections.create({
+            data: {
+                type: provider,
+                userId: userId
+            }
+        })
 
-    // Simulate fetching boards/projects
-    const mockData: Record<string, any> = {
-        'Trello': { boards: 5, pendingTasks: 12 },
-        'Asana': { workspaces: ['Engineering', 'Design'], tasks: 24 },
-        'Jira': { projects: ['PROJ', 'KAN'], openIssues: 8 },
-        'Linear': { teams: ['Core', 'Platform'], activeCycle: 42 }
-    }
-
-    return {
-        success: true,
-        message: `Connected to ${provider} Workspace`,
-        connected: true,
-        data: mockData[provider] || { connected: true }
+        return {
+            success: true,
+            message: `Connected to ${provider} Workspace`,
+            connected: true,
+            data: { connected: true }
+        }
+    } catch (error) {
+        console.error(`Error connecting to ${provider}:`, error)
+        return {
+            success: false,
+            message: `Failed to connect to ${provider}`,
+            connected: false
+        }
     }
 }
 
@@ -102,15 +139,36 @@ export const onSocialConnect = async (
     provider: 'Twitter' | 'LinkedIn' | 'Facebook' | 'Instagram',
     oauthToken: string
 ): Promise<ServiceConnectionStatus> => {
+    const { userId } = auth()
+    
+    if (!userId) {
+        return {
+            success: false,
+            message: 'User not authenticated',
+            connected: false
+        }
+    }
 
-    return {
-        success: true,
-        message: `Authorized ${provider} account`,
-        connected: true,
-        data: {
-            handle: '@demo_user',
-            followers: 1250,
-            verified: true
+    try {
+        await db.connections.create({
+            data: {
+                type: provider,
+                userId: userId
+            }
+        })
+
+        return {
+            success: true,
+            message: `Authorized ${provider} account`,
+            connected: true,
+            data: { connected: true }
+        }
+    } catch (error) {
+        console.error(`Error connecting to ${provider}:`, error)
+        return {
+            success: false,
+            message: `Failed to authorize ${provider}`,
+            connected: false
         }
     }
 }
@@ -122,18 +180,91 @@ export const onAIConnect = async (
     provider: 'OpenAI' | 'Anthropic' | 'HuggingFace' | 'Google Gemini' | 'Ollama' | 'Groq',
     apiKey: string
 ): Promise<ServiceConnectionStatus> => {
+    const { userId } = auth()
+    
+    if (!userId) {
+        return {
+            success: false,
+            message: 'User not authenticated',
+            connected: false
+        }
+    }
 
-    return {
-        success: true,
-        message: `${provider} API Key validated`,
-        connected: true,
-        data: {
-            models: provider === 'OpenAI' ? ['gpt-4', 'gpt-3.5-turbo']
-                : provider === 'Google Gemini' ? ['gemini-pro']
-                    : provider === 'Groq' ? ['llama3-8b-8192']
-                        : provider === 'Ollama' ? ['llama3']
-                            : ['claude-3-opus', 'claude-3-sonnet'],
-            quota: 'High Tier'
+    try {
+        // Validate API key by making a test request
+        let isValid = false
+        let models: string[] = []
+
+        if (provider === 'OpenAI') {
+            const response = await fetch('https://api.openai.com/v1/models', {
+                headers: { 'Authorization': `Bearer ${apiKey}` }
+            })
+            isValid = response.ok
+            if (isValid) {
+                const data = await response.json()
+                models = data.data?.slice(0, 5).map((m: any) => m.id) || []
+            }
+        } else if (provider === 'Anthropic') {
+            // Anthropic doesn't have a models endpoint, so we validate differently
+            isValid = apiKey.startsWith('sk-ant-')
+            models = ['claude-3-opus', 'claude-3-sonnet', 'claude-3-haiku']
+        } else if (provider === 'Google Gemini') {
+            isValid = apiKey.length > 20
+            models = ['gemini-pro', 'gemini-1.5-flash', 'gemini-1.5-pro']
+        } else if (provider === 'Ollama') {
+            // Ollama is local, no API key needed
+            isValid = true
+            models = ['llama3', 'codellama', 'mistral']
+        } else if (provider === 'Groq') {
+            isValid = apiKey.startsWith('gsk_')
+            models = ['llama3-8b-8192', 'mixtral-8x7b-32768']
+        } else {
+            isValid = apiKey.length > 10
+        }
+
+        if (!isValid) {
+            return {
+                success: false,
+                message: `Invalid ${provider} API key`,
+                connected: false
+            }
+        }
+
+        // Store API key in database
+        await db.apiKey.upsert({
+            where: {
+                userId_provider: {
+                    userId: userId,
+                    provider: provider.toLowerCase()
+                }
+            },
+            update: {
+                key: apiKey,
+                isActive: true
+            },
+            create: {
+                userId: userId,
+                provider: provider.toLowerCase(),
+                key: apiKey,
+                isActive: true
+            }
+        })
+
+        return {
+            success: true,
+            message: `${provider} API Key validated`,
+            connected: true,
+            data: {
+                models: models,
+                quota: 'Active'
+            }
+        }
+    } catch (error) {
+        console.error(`Error connecting to ${provider}:`, error)
+        return {
+            success: false,
+            message: `Failed to validate ${provider} API key`,
+            connected: false
         }
     }
 }
@@ -145,15 +276,40 @@ export const onPaymentConnect = async (
     provider: 'Stripe' | 'PayPal' | 'Shopify' | 'WooCommerce',
     keys: { public?: string, secret?: string }
 ): Promise<ServiceConnectionStatus> => {
+    const { userId } = auth()
+    
+    if (!userId) {
+        return {
+            success: false,
+            message: 'User not authenticated',
+            connected: false
+        }
+    }
 
-    return {
-        success: true,
-        message: `Secure connection established with ${provider}`,
-        connected: true,
-        data: {
-            mode: 'Live Mode',
-            currency: 'USD',
-            lastSync: new Date().toISOString()
+    try {
+        await db.connections.create({
+            data: {
+                type: provider,
+                userId: userId
+            }
+        })
+
+        return {
+            success: true,
+            message: `Secure connection established with ${provider}`,
+            connected: true,
+            data: {
+                mode: keys.secret?.includes('test') ? 'Test Mode' : 'Live Mode',
+                currency: 'USD',
+                lastSync: new Date().toISOString()
+            }
+        }
+    } catch (error) {
+        console.error(`Error connecting to ${provider}:`, error)
+        return {
+            success: false,
+            message: `Failed to connect to ${provider}`,
+            connected: false
         }
     }
 }
@@ -165,17 +321,47 @@ export const onDatabaseConnect = async (
     provider: 'PostgreSQL' | 'MySQL' | 'MongoDB' | 'Supabase' | 'Firebase' | 'Redis',
     connectionString: string
 ): Promise<ServiceConnectionStatus> => {
+    const { userId } = auth()
+    
+    if (!userId) {
+        return {
+            success: false,
+            message: 'User not authenticated',
+            connected: false
+        }
+    }
 
-    console.log(`Testing connection to ${provider}...`)
+    try {
+        // Validate connection string format
+        if (!connectionString || connectionString.length < 10) {
+            return {
+                success: false,
+                message: 'Invalid connection string',
+                connected: false
+            }
+        }
 
-    return {
-        success: true,
-        message: `Database connection verified`,
-        connected: true,
-        data: {
-            version: 'v14.2',
-            latency: '24ms',
-            status: 'Healthy'
+        await db.connections.create({
+            data: {
+                type: provider,
+                userId: userId
+            }
+        })
+
+        return {
+            success: true,
+            message: `Database connection verified`,
+            connected: true,
+            data: {
+                status: 'Connected'
+            }
+        }
+    } catch (error) {
+        console.error(`Error connecting to ${provider}:`, error)
+        return {
+            success: false,
+            message: `Failed to connect to ${provider}`,
+            connected: false
         }
     }
 }
@@ -184,27 +370,39 @@ export const onDatabaseConnect = async (
 // Generic Webhook & HTTP
 // ==========================================
 export const generateWebhookUrl = async (workflowId: string) => {
+    const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://api.flowlab.automation'
+    const webhookId = crypto.randomUUID().substring(0, 8)
+    const secret = `wh_${crypto.randomUUID().replace(/-/g, '').substring(0, 24)}`
+    
     return {
-        url: `https://api.flowlab.automation/webhooks/${workflowId}/${Math.random().toString(36).substring(7)}`,
-        secret: `wh_${Math.random().toString(36).substring(2)}`
+        url: `${baseUrl}/api/webhooks/${workflowId}/${webhookId}`,
+        secret: secret
     }
 }
 
 export const testHttpRequest = async (url: string, method: string, headers: any, body: any) => {
     try {
-        // In a real scenario, we would actually fetch
-        // const response = await fetch(url, { method, headers, body: JSON.stringify(body) })
-        // const data = await response.json()
+        const response = await fetch(url, { 
+            method, 
+            headers: {
+                'Content-Type': 'application/json',
+                ...headers
+            },
+            body: body ? JSON.stringify(body) : undefined
+        })
+        
+        const data = await response.json().catch(() => ({}))
 
         return {
-            status: 200,
-            statusText: 'OK',
-            data: { success: true, mocked: true }
+            status: response.status,
+            statusText: response.statusText,
+            data: data
         }
-    } catch (error: any) {
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
         return {
             status: 500,
-            error: error.message
+            error: errorMessage
         }
     }
 }

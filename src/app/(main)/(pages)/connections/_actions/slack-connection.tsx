@@ -59,11 +59,14 @@ export const testSlackConnection = async (): Promise<{
         channels: channelCount,
       },
     }
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error 
+      ? (error as any).response?.data?.error || error.message 
+      : 'Failed to connect to Slack'
     console.error('Slack connection test failed:', error)
     return {
       success: false,
-      message: error.response?.data?.error || error.message || 'Failed to connect to Slack',
+      message: errorMessage,
     }
   }
 }
@@ -106,11 +109,12 @@ export const listSlackChannels = async (): Promise<{
       success: true,
       channels,
     }
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to list channels'
     return {
       success: false,
       channels: [],
-      message: error.message || 'Failed to list channels',
+      message: errorMessage,
     }
   }
 }
@@ -153,10 +157,13 @@ export const sendTestSlackMessage = async (
       success: true,
       message: 'Test message sent successfully!',
     }
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error 
+      ? (error as any).response?.data?.error || error.message 
+      : 'Failed to send message'
     return {
       success: false,
-      message: error.response?.data?.error || error.message || 'Failed to send message',
+      message: errorMessage,
     }
   }
 }
@@ -172,7 +179,7 @@ export const onSlackConnect = async (
   team_name: string,
   user_id: string
 ): Promise<void> => {
-  console.log('Slack connection stored for team:', team_name)
+  // Connection stored via OAuth callback
 }
 
 // Get stored connection (uses env tokens for now)
@@ -235,8 +242,9 @@ export async function listBotChannels(
         label: ch.name,
         value: ch.id,
       }))
-  } catch (error: any) {
-    console.warn('Error listing bot channels:', error.message)
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.warn('Error listing bot channels:', errorMessage)
     return []
   }
 }

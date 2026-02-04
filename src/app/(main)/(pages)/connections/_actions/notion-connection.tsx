@@ -39,11 +39,12 @@ export const testNotionConnection = async (): Promise<{
         workspace: response.type === 'bot' ? (response as any).bot?.workspace_name : 'Connected',
       },
     }
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to connect to Notion'
     console.error('Notion connection test failed:', error)
     return {
       success: false,
-      message: error.message || 'Failed to connect to Notion',
+      message: errorMessage,
     }
   }
 }
@@ -83,11 +84,12 @@ export const listNotionDatabases = async (): Promise<{
       success: true,
       databases,
     }
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to list databases'
     return {
       success: false,
       databases: [],
-      message: error.message || 'Failed to list databases',
+      message: errorMessage,
     }
   }
 }
@@ -101,7 +103,6 @@ export const onNotionConnect = async (
   database_id: string,
   id: string
 ) => {
-  console.log('Notion connection stored for workspace:', workspace_name)
   return { success: true }
 }
 

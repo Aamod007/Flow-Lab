@@ -19,13 +19,9 @@ export async function GET(request: Request) {
     
     const { provider, action } = queryValidation.data
 
-    console.log(`[Connection Test] Provider: ${provider}, Action: ${action}`)
-
     if (provider === 'notion') {
       if (action === 'test') {
-        console.log('[Notion] Testing connection...')
         const result = await testNotionConnection()
-        console.log('[Notion] Test result:', result)
         return createSuccessResponse(result)
       } else if (action === 'databases') {
         const result = await listNotionDatabases()
@@ -35,9 +31,7 @@ export async function GET(request: Request) {
 
     if (provider === 'slack') {
       if (action === 'test') {
-        console.log('[Slack] Testing connection...')
         const result = await testSlackConnection()
-        console.log('[Slack] Test result:', result)
         return createSuccessResponse(result)
       } else if (action === 'channels') {
         const result = await listSlackChannels()

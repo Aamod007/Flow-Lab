@@ -1,5 +1,5 @@
 'use client'
-import { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useState } from 'react'
 
 export type ConnectionProviderProps = {
   discordNode: {
@@ -142,5 +142,8 @@ export const ConnectionsProvider = ({ children }: ConnectionWithChildProps) => {
 
 export const useNodeConnections = () => {
   const nodeConnection = useContext(ConnectionsContext)
+  if (!nodeConnection) {
+    throw new Error('useNodeConnections must be used within ConnectionsProvider')
+  }
   return { nodeConnection }
 }

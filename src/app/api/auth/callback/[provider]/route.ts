@@ -34,8 +34,6 @@ export async function GET(
         // ---------------------------------------------------------
         // Here we would normally save 'access_token' and 'refresh_token' to the DB user record
 
-        console.log(`Successfully authenticated with ${provider}. Code: ${code.substring(0, 10)}...`)
-
         // We'll use a script to close the popup and notify the parent window
         const html = `
       <html>

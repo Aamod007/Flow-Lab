@@ -58,7 +58,7 @@ const Connections = () => {
       [title]: {
         connected: true,
         connectedAt: new Date().toISOString(),
-        accountName: `Demo ${title} Account`
+        accountName: `${title} Account`
       }
     }
     saveConnections(newConnections)

@@ -1,11 +1,43 @@
 'use server'
 
-const DEMO_USER_ID = 'demo-user-123'
+import { db } from '@/lib/db'
+import { auth } from '@clerk/nextjs'
 
 export const onPaymentDetails = async () => {
-    // Return mock data for demo - no database required
-    return {
-        tier: 'Free',
-        credits: '10',
+    const { userId } = auth()
+    
+    if (!userId) {
+        return {
+            tier: 'Free',
+            credits: '10',
+        }
+    }
+
+    try {
+        const user = await db.user.findUnique({
+            where: { clerkId: userId },
+            select: {
+                tier: true,
+                credits: true,
+            },
+        })
+
+        if (!user) {
+            return {
+                tier: 'Free',
+                credits: '10',
+            }
+        }
+
+        return {
+            tier: user.tier,
+            credits: String(user.credits),
+        }
+    } catch (error) {
+        console.error('Error fetching payment details:', error)
+        return {
+            tier: 'Free',
+            credits: '10',
+        }
     }
 }

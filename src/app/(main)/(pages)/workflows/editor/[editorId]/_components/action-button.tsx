@@ -40,18 +40,14 @@ const ActionButton = ({
       } else {
         toast.error(response.message)
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to send Discord message')
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send Discord message'
+      toast.error(errorMessage)
     }
   }, [nodeConnection])
 
   const onStoreNotionContent = useCallback(async () => {
     try {
-      console.log(
-        nodeConnection.notionNode.databaseId,
-        nodeConnection.notionNode.accessToken,
-        nodeConnection.notionNode.content
-      )
       const response = await onCreateNewPageInDatabase(
         nodeConnection.notionNode.databaseId,
         nodeConnection.notionNode.accessToken,
@@ -64,8 +60,9 @@ const ActionButton = ({
         }))
         toast.success('Page created in Notion')
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to create Notion page')
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create Notion page'
+      toast.error(errorMessage)
     }
   }, [nodeConnection])
 

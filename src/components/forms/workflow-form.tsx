@@ -1,6 +1,5 @@
 import { WorkflowFormSchema } from '@/lib/types'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useRouter } from 'next/navigation'
 import React from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -43,16 +42,20 @@ const Workflowform = ({ subTitle, title }: Props) => {
   })
 
   const isLoading = form.formState.isLoading
-  const router = useRouter()
 
   const handleSubmit = async (values: z.infer<typeof WorkflowFormSchema>) => {
-    const workflow = saveWorkflowToStorage(values.name, values.description)
-    if (workflow) {
-      toast.message('Workflow created successfully')
-      // Dispatch custom event to trigger workflow list refresh
-      window.dispatchEvent(new Event('workflowCreated'))
+    try {
+      const workflow = saveWorkflowToStorage(values.name, values.description)
+      if (workflow) {
+        toast.message('Workflow created successfully')
+        // Dispatch custom event to trigger workflow list refresh
+        window.dispatchEvent(new Event('workflowCreated'))
+      }
+      setClose()
+    } catch (error) {
+      console.error('Failed to create workflow:', error)
+      toast.error('Failed to create workflow. Please try again.')
     }
-    setClose()
   }
 
   return (

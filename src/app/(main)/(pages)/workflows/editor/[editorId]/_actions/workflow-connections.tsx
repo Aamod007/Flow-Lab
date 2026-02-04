@@ -1,18 +1,7 @@
 'use server'
 
-// Mock workflow store for demo purposes (shared state would be in a real database)
-// This is a simple in-memory store that persists during the server session
-const MOCK_WORKFLOWS: Record<string, any> = {
-  'demo-workflow-1': {
-    id: 'demo-workflow-1',
-    name: 'Demo Workflow',
-    description: 'A demo workflow for testing',
-    nodes: '[]',
-    edges: '[]',
-    flowPath: '',
-    publish: false,
-  }
-}
+import { db } from '@/lib/db'
+import { auth } from '@clerk/nextjs'
 
 // Type for workflow save response
 type SaveResponse = {
@@ -39,10 +28,16 @@ export const onCreateNodesEdges = async (
   edges: string,
   flowPath: string
 ): Promise<SaveResponse> => {
+  const { userId } = auth()
+  
   try {
     // Validate inputs
     if (!flowId) {
       return { success: false, message: 'Workflow ID is required' }
+    }
+
+    if (!userId) {
+      return { success: false, message: 'User not authenticated' }
     }
 
     // Validate JSON format
@@ -53,35 +48,40 @@ export const onCreateNodesEdges = async (
       return { success: false, message: 'Invalid node or edge data format' }
     }
 
-    console.log('Saving workflow:', flowId, 'Nodes count:', JSON.parse(nodes).length)
-
-    // Create or update workflow in mock store
-    if (!MOCK_WORKFLOWS[flowId]) {
-      MOCK_WORKFLOWS[flowId] = {
+    // Create or update workflow in database
+    const workflow = await db.workflows.upsert({
+      where: { id: flowId },
+      update: {
+        nodes,
+        edges,
+        flowPath,
+      },
+      create: {
         id: flowId,
         name: 'Workflow',
         description: '',
+        nodes,
+        edges,
+        flowPath,
+        userId: userId,
         publish: false,
       }
-    }
-
-    MOCK_WORKFLOWS[flowId].nodes = nodes
-    MOCK_WORKFLOWS[flowId].edges = edges
-    MOCK_WORKFLOWS[flowId].flowPath = flowPath
+    })
 
     return {
       success: true,
       message: 'flow saved',
       data: {
-        id: flowId,
-        nodes: nodes,
-        edges: edges,
-        flowPath: flowPath,
+        id: workflow.id,
+        nodes: workflow.nodes,
+        edges: workflow.edges,
+        flowPath: workflow.flowPath,
       }
     }
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     console.error('Error saving workflow:', error)
-    return { success: false, message: `Failed to save workflow: ${error?.message || 'Unknown error'}` }
+    return { success: false, message: `Failed to save workflow: ${errorMessage}` }
   }
 }
 
@@ -89,25 +89,25 @@ export const onFlowPublish = async (
   workflowId: string,
   state: boolean
 ): Promise<PublishResponse> => {
+  const { userId } = auth()
+  
   try {
     if (!workflowId) {
       return { success: false, message: 'Workflow ID is required' }
     }
 
-    console.log('Publishing workflow:', workflowId, 'State:', state)
-
-    // Get or create workflow
-    if (!MOCK_WORKFLOWS[workflowId]) {
-      MOCK_WORKFLOWS[workflowId] = {
-        id: workflowId,
-        name: 'Workflow',
-        nodes: '[]',
-        edges: '[]',
-        publish: false,
-      }
+    if (!userId) {
+      return { success: false, message: 'User not authenticated' }
     }
 
-    const workflow = MOCK_WORKFLOWS[workflowId]
+    // Get workflow to validate
+    const workflow = await db.workflows.findUnique({
+      where: { id: workflowId }
+    })
+
+    if (!workflow) {
+      return { success: false, message: 'Workflow not found' }
+    }
 
     // Validate that workflow has content before publishing
     if (state) {
@@ -121,7 +121,10 @@ export const onFlowPublish = async (
     }
 
     // Update publish state
-    MOCK_WORKFLOWS[workflowId].publish = state
+    await db.workflows.update({
+      where: { id: workflowId },
+      data: { publish: state }
+    })
 
     if (state) {
       return {
@@ -136,16 +139,26 @@ export const onFlowPublish = async (
       message: 'Workflow unpublished',
       published: false
     }
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     console.error('Error publishing workflow:', error)
-    return { success: false, message: `Failed to publish workflow: ${error?.message || 'Unknown error'}` }
+    return { success: false, message: `Failed to publish workflow: ${errorMessage}` }
   }
 }
 
 // Get workflow status (for checking if published)
 export const getWorkflowStatus = async (workflowId: string) => {
   try {
-    const workflow = MOCK_WORKFLOWS[workflowId]
+    const workflow = await db.workflows.findUnique({
+      where: { id: workflowId },
+      select: {
+        id: true,
+        name: true,
+        publish: true,
+        nodes: true,
+        edges: true,
+      }
+    })
 
     if (workflow) {
       return {

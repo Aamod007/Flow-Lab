@@ -1,46 +1,40 @@
 'use server'
 import { Option } from '@/components/ui/multiple-selector'
-
-// Local storage keys - these actions run on server, but we'll use a mock in-memory store
-// For demo purposes, we'll return mock data since server actions can't access localStorage
-
-// Mock workflow store for demo purposes (in production, this would be database calls)
-const MOCK_WORKFLOWS: Record<string, any> = {
-  'demo-workflow-1': {
-    id: 'demo-workflow-1',
-    name: 'Demo Workflow',
-    description: 'A demo workflow for testing',
-    nodes: '[]',
-    edges: '[]',
-    publish: false,
-    discordTemplate: '',
-    slackTemplate: '',
-    slackAccessToken: '',
-    slackChannels: [],
-    notionTemplate: '',
-    notionAccessToken: '',
-    notionDbId: '',
-  }
-}
+import { db } from '@/lib/db'
+import { auth } from '@clerk/nextjs'
 
 export const getGoogleListener = async (): Promise<{
   googleResourceId: string | null
 } | null> => {
-  // Return null for demo - no database required for this
-  return null
+  const { userId } = auth()
+  if (!userId) return null
+
+  try {
+    const user = await db.user.findUnique({
+      where: { clerkId: userId },
+      select: { googleResourceId: true }
+    })
+    return user ? { googleResourceId: user.googleResourceId } : null
+  } catch (error) {
+    console.error('Error fetching Google listener:', error)
+    return null
+  }
 }
 
 export const onFlowPublish = async (workflowId: string, state: boolean) => {
-  console.log('Publishing workflow:', workflowId, 'State:', state)
+  const { userId } = auth()
+  if (!userId) return 'User not authenticated'
 
-  // Mock publish toggle
-  if (MOCK_WORKFLOWS[workflowId]) {
-    MOCK_WORKFLOWS[workflowId].publish = state
+  try {
+    await db.workflows.update({
+      where: { id: workflowId, userId: userId },
+      data: { publish: state }
+    })
     return state ? 'Workflow published' : 'Workflow unpublished'
+  } catch (error) {
+    console.error('Error publishing workflow:', error)
+    return 'Failed to update workflow'
   }
-
-  // For any workflow, just return success
-  return state ? 'Workflow published' : 'Workflow unpublished'
 }
 
 export const onCreateNodeTemplate = async (
@@ -51,79 +45,116 @@ export const onCreateNodeTemplate = async (
   accessToken?: string,
   notionDbId?: string
 ) => {
-  console.log('Creating node template:', { type, workflowId, content: content.substring(0, 50) })
+  const { userId } = auth()
+  if (!userId) return 'User not authenticated'
 
-  // Mock template creation
-  const workflow = MOCK_WORKFLOWS[workflowId] || {}
-
-  if (type === 'Discord') {
-    workflow.discordTemplate = content
-    MOCK_WORKFLOWS[workflowId] = workflow
-    return 'Discord template saved'
-  }
-
-  if (type === 'Slack') {
-    workflow.slackTemplate = content
-    workflow.slackAccessToken = accessToken || ''
-    if (channels && channels.length > 0) {
-      workflow.slackChannels = [...(workflow.slackChannels || []), ...channels.map(c => c.value)]
+  try {
+    if (type === 'Discord') {
+      await db.workflows.update({
+        where: { id: workflowId, userId: userId },
+        data: { discordTemplate: content }
+      })
+      return 'Discord template saved'
     }
-    MOCK_WORKFLOWS[workflowId] = workflow
-    return 'Slack template saved'
-  }
 
-  if (type === 'Notion') {
-    workflow.notionTemplate = content
-    workflow.notionAccessToken = accessToken || ''
-    workflow.notionDbId = notionDbId || ''
-    MOCK_WORKFLOWS[workflowId] = workflow
-    return 'Notion template saved'
-  }
+    if (type === 'Slack') {
+      const slackChannels = channels?.map(c => c.value) || []
+      await db.workflows.update({
+        where: { id: workflowId, userId: userId },
+        data: {
+          slackTemplate: content,
+          slackAccessToken: accessToken || undefined,
+          slackChannels: slackChannels
+        }
+      })
+      return 'Slack template saved'
+    }
 
-  return 'Template saved'
+    if (type === 'Notion') {
+      await db.workflows.update({
+        where: { id: workflowId, userId: userId },
+        data: {
+          notionTemplate: content,
+          notionAccessToken: accessToken || undefined,
+          notionDbId: notionDbId || undefined
+        }
+      })
+      return 'Notion template saved'
+    }
+
+    return 'Template saved'
+  } catch (error) {
+    console.error('Error saving template:', error)
+    return 'Failed to save template'
+  }
 }
 
 export const onGetWorkflows = async () => {
-  // Return mock workflows list
-  return Object.values(MOCK_WORKFLOWS).map(w => ({
-    id: w.id,
-    name: w.name,
-    description: w.description,
-    publish: w.publish,
-  }))
+  const { userId } = auth()
+  if (!userId) return []
+
+  try {
+    const workflows = await db.workflows.findMany({
+      where: { userId: userId },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        publish: true,
+      },
+      orderBy: { id: 'desc' }
+    })
+    return workflows
+  } catch (error) {
+    console.error('Error fetching workflows:', error)
+    return []
+  }
 }
 
 export const onCreateWorkflow = async (name: string, description: string) => {
-  const id = `workflow-${Date.now()}`
-  MOCK_WORKFLOWS[id] = {
-    id,
-    name,
-    description,
-    nodes: '[]',
-    edges: '[]',
-    publish: false,
-    discordTemplate: '',
-    slackTemplate: '',
-    slackAccessToken: '',
-    slackChannels: [],
-    notionTemplate: '',
-    notionAccessToken: '',
-    notionDbId: '',
+  const { userId } = auth()
+  if (!userId) return { message: 'User not authenticated', id: null }
+
+  try {
+    const workflow = await db.workflows.create({
+      data: {
+        name,
+        description,
+        userId: userId,
+        nodes: '[]',
+        edges: '[]',
+        publish: false,
+      }
+    })
+    return { message: 'workflow created', id: workflow.id }
+  } catch (error) {
+    console.error('Error creating workflow:', error)
+    return { message: 'Failed to create workflow', id: null }
   }
-  return { message: 'workflow created', id }
 }
 
 export const onGetNodesEdges = async (flowId: string) => {
+  const { userId } = auth()
+  
   try {
     if (!flowId) {
       console.error('onGetNodesEdges: No flowId provided')
       return { nodes: '[]', edges: '[]', error: 'No workflow ID provided' }
     }
 
-    console.log('Loading workflow:', flowId)
+    if (!userId) {
+      return { nodes: '[]', edges: '[]', error: 'User not authenticated' }
+    }
 
-    // Return mock data - in real app this would come from database
-    const workflow = MOCK_WORKFLOWS[flowId]
+    const workflow = await db.workflows.findUnique({
+      where: { id: flowId },
+      select: {
+        nodes: true,
+        edges: true,
+        publish: true,
+        name: true,
+      }
+    })
 
     if (workflow) {
       return {
@@ -141,12 +172,13 @@ export const onGetNodesEdges = async (flowId: string) => {
       publish: false,
       name: 'New Workflow',
     }
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to load workflow'
     console.error('Error fetching workflow nodes/edges:', error)
     return {
       nodes: '[]',
       edges: '[]',
-      error: error?.message || 'Failed to load workflow'
+      error: errorMessage
     }
   }
 }
@@ -156,25 +188,34 @@ export const onSaveWorkflow = async (
   nodes: string,
   edges: string
 ) => {
+  const { userId } = auth()
+  
   try {
-    console.log('Saving workflow:', workflowId)
+    if (!userId) {
+      return { success: false, error: 'User not authenticated' }
+    }
 
-    // Update mock store
-    if (!MOCK_WORKFLOWS[workflowId]) {
-      MOCK_WORKFLOWS[workflowId] = {
+    await db.workflows.upsert({
+      where: { id: workflowId },
+      update: {
+        nodes,
+        edges,
+      },
+      create: {
         id: workflowId,
         name: 'Workflow',
         description: '',
+        nodes,
+        edges,
+        userId: userId,
         publish: false,
       }
-    }
-
-    MOCK_WORKFLOWS[workflowId].nodes = nodes
-    MOCK_WORKFLOWS[workflowId].edges = edges
+    })
 
     return { success: true, message: 'Workflow saved' }
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to save workflow'
     console.error('Error saving workflow:', error)
-    return { success: false, error: error?.message || 'Failed to save workflow' }
+    return { success: false, error: errorMessage }
   }
 }

@@ -2,6 +2,7 @@ import { SparklesCore } from '@/components/global/sparkles'
 import { ClerkProvider } from '@clerk/nextjs'
 import { dark } from '@clerk/themes'
 import React from 'react'
+import { ErrorBoundary } from '@/components/error-boundary'
 
 type Props = { children: React.ReactNode }
 
@@ -29,7 +30,9 @@ const Layout = ({ children }: Props) => {
         {/* Glassmorphism Container */}
         <div className="relative p-1 rounded-xl bg-gradient-to-br from-neutral-800/50 to-neutral-900/50 border border-neutral-800/50 backdrop-blur-md shadow-2xl">
           <div className="bg-black/40 rounded-lg p-2">
-            {children}
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
           </div>
         </div>
       </div>

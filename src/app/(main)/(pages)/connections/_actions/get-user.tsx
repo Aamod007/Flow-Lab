@@ -1,17 +1,36 @@
 'use server'
 
-// Mock user data for demo mode - no database required
+import { db } from '@/lib/db'
 
-export const getUserData = async (id: string) => {
-  // Return mock user data for demo
-  return {
-    id: 1,
-    clerkId: id || 'demo-user-123',
-    name: 'Demo User',
-    email: 'demo@example.com',
-    profileImage: null,
-    tier: 'Free',
-    credits: '10',
-    connections: []
+export const getUserData = async (clerkId: string) => {
+  if (!clerkId) {
+    return null
+  }
+
+  try {
+    const user = await db.user.findUnique({
+      where: { clerkId },
+      include: {
+        connections: true,
+      },
+    })
+
+    if (!user) {
+      return null
+    }
+
+    return {
+      id: user.id,
+      clerkId: user.clerkId,
+      name: user.name,
+      email: user.email,
+      profileImage: user.profileImage,
+      tier: user.tier,
+      credits: String(user.credits),
+      connections: user.connections,
+    }
+  } catch (error) {
+    console.error('Error fetching user data:', error)
+    return null
   }
 }

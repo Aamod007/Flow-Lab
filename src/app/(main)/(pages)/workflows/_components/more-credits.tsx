@@ -7,7 +7,7 @@ type Props = {}
 
 const MoreCredits = (props: Props) => {
     const { credits } = useBilling()
-    return credits !== '0' ? (
+    return credits !== 0 ? (
         <></>
     ) : (
         <Card>

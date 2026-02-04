@@ -59,76 +59,18 @@ export function WorkflowCostTable() {
         setWorkflows(data.workflows || [])
         setTotalPages(Math.ceil((data.total || 0) / pageSize))
       } else {
-        // Use mock data if API not ready
-        setWorkflows(generateMockData())
+        // Show empty state if API not ready
+        setWorkflows([])
         setTotalPages(1)
       }
     } catch (error) {
       console.error('Failed to fetch workflow costs:', error)
-      // Use mock data on error
-      setWorkflows(generateMockData())
+      // Show empty state on error
+      setWorkflows([])
     } finally {
       setLoading(false)
     }
   }
-
-  const generateMockData = (): WorkflowCost[] => [
-    {
-      workflowId: '1',
-      workflowName: 'Email Processing Pipeline',
-      totalCost: 12.45,
-      executionCount: 156,
-      avgCostPerExecution: 0.08,
-      lastExecution: '2024-01-15T10:30:00Z',
-      trend: 'up',
-      trendPercent: 12,
-      providers: ['OpenAI', 'Anthropic']
-    },
-    {
-      workflowId: '2',
-      workflowName: 'Data Analysis Flow',
-      totalCost: 8.32,
-      executionCount: 89,
-      avgCostPerExecution: 0.09,
-      lastExecution: '2024-01-14T15:45:00Z',
-      trend: 'down',
-      trendPercent: 5,
-      providers: ['OpenAI']
-    },
-    {
-      workflowId: '3',
-      workflowName: 'Content Generation',
-      totalCost: 25.60,
-      executionCount: 234,
-      avgCostPerExecution: 0.11,
-      lastExecution: '2024-01-15T08:20:00Z',
-      trend: 'up',
-      trendPercent: 23,
-      providers: ['Anthropic', 'OpenAI']
-    },
-    {
-      workflowId: '4',
-      workflowName: 'Local AI Testing',
-      totalCost: 0,
-      executionCount: 45,
-      avgCostPerExecution: 0,
-      lastExecution: '2024-01-15T12:00:00Z',
-      trend: 'stable',
-      trendPercent: 0,
-      providers: ['Ollama']
-    },
-    {
-      workflowId: '5',
-      workflowName: 'Chat Support Bot',
-      totalCost: 5.20,
-      executionCount: 312,
-      avgCostPerExecution: 0.02,
-      lastExecution: '2024-01-15T09:15:00Z',
-      trend: 'down',
-      trendPercent: 8,
-      providers: ['Groq']
-    }
-  ]
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)

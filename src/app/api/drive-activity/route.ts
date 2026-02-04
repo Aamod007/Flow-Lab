@@ -64,8 +64,6 @@ export async function GET() {
     })
 
     if (listener.status === 200) {
-      // In demo mode, we just log the listener creation
-      console.log('Google Drive listener created:', listener.data.resourceId)
       return new NextResponse('Listening to changes...')
     }
 

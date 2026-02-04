@@ -41,23 +41,33 @@ const DashboardPage = () => {
       try {
         setAiStats(JSON.parse(savedStats))
       } catch (e) {
-        // Use default stats for demo
+        // Default to zero stats if parsing fails
         setAiStats({
-          totalExecutions: 47,
-          estimatedCost: 2.34,
-          tokensUsed: 125000,
-          savedByLocal: 18.50
+          totalExecutions: 0,
+          estimatedCost: 0,
+          tokensUsed: 0,
+          savedByLocal: 0
         })
       }
-    } else {
-      // Demo stats
-      setAiStats({
-        totalExecutions: 47,
-        estimatedCost: 2.34,
-        tokensUsed: 125000,
-        savedByLocal: 18.50
-      })
     }
+    
+    // Also try to fetch stats from API
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/analytics/stats')
+        if (response.ok) {
+          const data = await response.json()
+          setAiStats(prev => ({
+            ...prev,
+            ...data
+          }))
+        }
+      } catch (error) {
+        console.error('Error fetching AI stats:', error)
+      }
+    }
+    
+    fetchStats()
   }, [])
 
   const publishedCount = workflows.filter(w => w.publish).length

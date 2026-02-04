@@ -63,15 +63,45 @@ export const BudgetAlerts = () => {
     const [alerts, setAlerts] = useState<BudgetAlert[]>([])
     const [currentSpend, setCurrentSpend] = useState(0)
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+    const [loading, setLoading] = useState(true)
 
-    // Simulate loading budget data
+    // Fetch budget data from API
     useEffect(() => {
-        // Mock current spend - in real app, fetch from API
-        setCurrentSpend(35.47)
+        const fetchBudgetData = async () => {
+            try {
+                const response = await fetch('/api/billing/budget')
+                if (response.ok) {
+                    const data = await response.json()
+                    setCurrentSpend(data.currentSpend || 0)
+                    if (data.settings) {
+                        setSettings(prev => ({
+                            ...prev,
+                            ...data.settings
+                        }))
+                    }
+                } else {
+                    // If API not ready, start with 0
+                    setCurrentSpend(0)
+                }
+            } catch (error) {
+                console.error('Error fetching budget data:', error)
+                setCurrentSpend(0)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchBudgetData()
+    }, [])
+
+    // Generate alerts based on current spend
+    useEffect(() => {
+        if (loading) return
         
-        // Generate alerts based on current spend
         const newAlerts: BudgetAlert[] = []
-        const percentUsed = (35.47 / settings.monthlyBudget) * 100
+        const percentUsed = settings.monthlyBudget > 0 
+            ? (currentSpend / settings.monthlyBudget) * 100 
+            : 0
 
         if (percentUsed >= settings.criticalThreshold) {
             newAlerts.push({
@@ -93,18 +123,8 @@ export const BudgetAlerts = () => {
             })
         }
 
-        // Check for rapid spending
-        newAlerts.push({
-            id: '3',
-            type: 'info',
-            title: 'Spending Trend',
-            message: 'Your spending pace is 15% higher than last month',
-            timestamp: new Date(Date.now() - 3600000),
-            acknowledged: true
-        })
-
         setAlerts(newAlerts)
-    }, [settings])
+    }, [settings, currentSpend, loading])
 
     const percentUsed = (currentSpend / settings.monthlyBudget) * 100
     const remaining = settings.monthlyBudget - currentSpend

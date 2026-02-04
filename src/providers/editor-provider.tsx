@@ -1,13 +1,7 @@
 'use client'
 
+import React, { Dispatch, createContext, useContext, useEffect, useReducer } from 'react'
 import { EditorActions, EditorNodeType } from '@/lib/types'
-import {
-  Dispatch,
-  createContext,
-  useContext,
-  useEffect,
-  useReducer,
-} from 'react'
 
 export type EditorNode = EditorNodeType
 

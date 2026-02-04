@@ -166,7 +166,8 @@ const FlowInstance = ({ children, edges, nodes }: Props) => {
         toast.error(response.message || 'Failed to save workflow')
         return { success: false }
       }
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
       console.error('Save error:', error)
       toast.error('Failed to save workflow', {
         description: 'Your changes are saved locally and will sync later'
@@ -247,10 +248,11 @@ const FlowInstance = ({ children, edges, nodes }: Props) => {
       } else {
         toast.error(response.message || 'Failed to update publish status')
       }
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
       console.error('Publish error:', error)
       toast.error('Failed to update publish status', {
-        description: error?.message || 'Please try again later'
+        description: errorMessage
       })
     } finally {
       setIsPublishing(false)

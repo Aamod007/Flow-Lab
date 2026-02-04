@@ -94,9 +94,10 @@ const ConnectionCard = ({
           description: result.message,
         })
       }
-    } catch (error: any) {
-      setTestResult({ success: false, message: error.message })
-      toast.error('Test failed', { description: error.message })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Test failed'
+      setTestResult({ success: false, message: errorMessage })
+      toast.error('Test failed', { description: errorMessage })
     } finally {
       setIsTesting(false)
     }
@@ -140,6 +141,8 @@ const ConnectionCard = ({
     const messageHandler = (event: MessageEvent) => {
       if (event.data?.type === 'OAUTH_SUCCESS' && event.data?.provider === providerSlug) {
         clearInterval(checkTimer)
+        clearTimeout(timeoutId)
+        window.removeEventListener('message', messageHandler)
         setIsConnecting(false)
         onConnect()
         toast.success(`Successfully connected to ${title}`)
@@ -149,11 +152,18 @@ const ConnectionCard = ({
     window.addEventListener('message', messageHandler)
 
     // Clean up listener after 5 minutes (timeout)
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       window.removeEventListener('message', messageHandler)
       clearInterval(checkTimer)
       setIsConnecting(false)
     }, 300000)
+    
+    // Return cleanup function
+    return () => {
+      clearInterval(checkTimer)
+      clearTimeout(timeoutId)
+      window.removeEventListener('message', messageHandler)
+    }
   }
 
   const handleDisconnect = () => {
