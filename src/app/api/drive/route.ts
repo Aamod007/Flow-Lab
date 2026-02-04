@@ -1,30 +1,36 @@
 import { google } from 'googleapis'
 import { auth, clerkClient } from '@clerk/nextjs'
-import { NextResponse } from 'next/server'
+import { getRequiredEnvVar } from '@/lib/env-validator'
+import { ApiErrorHandler, createSuccessResponse, logError } from '@/lib/api-response'
 
 // Google Drive API route - works without database
 
 export async function GET() {
-  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.OAUTH2_REDIRECT_URI) {
-    return NextResponse.json({ message: 'Missing Google OAuth configuration' }, { status: 500 })
-  }
-
-  const oauth2Client = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    process.env.OAUTH2_REDIRECT_URI
-  )
-
-  const { userId } = auth()
-  if (!userId) {
-    return NextResponse.json({ message: 'User not found' })
-  }
-
   try {
+    // Validate environment variables
+    const googleClientId = getRequiredEnvVar('GOOGLE_CLIENT_ID')
+    const googleClientSecret = getRequiredEnvVar('GOOGLE_CLIENT_SECRET')
+    const redirectUri = getRequiredEnvVar('OAUTH2_REDIRECT_URI')
+
+    const oauth2Client = new google.auth.OAuth2(
+      googleClientId,
+      googleClientSecret,
+      redirectUri
+    )
+
+    const { userId } = auth()
+    if (!userId) {
+      return ApiErrorHandler.unauthorized('User not found')
+    }
+
     const clerkResponse = await clerkClient.users.getUserOauthAccessToken(
       userId,
       'oauth_google'
     )
+
+    if (!clerkResponse || clerkResponse.length === 0) {
+      return ApiErrorHandler.unauthorized('Google OAuth token not found')
+    }
 
     const accessToken = clerkResponse[0].token
     oauth2Client.setCredentials({
@@ -38,35 +44,22 @@ export async function GET() {
 
     const response = await drive.files.list()
 
-    if (response) {
-      return Response.json(
-        {
-          message: response.data,
-        },
-        {
-          status: 200,
-        }
-      )
-    } else {
-      return Response.json(
-        {
-          message: 'No files found',
-        },
-        {
-          status: 200,
-        }
-      )
+    if (response && response.data) {
+      return createSuccessResponse({
+        message: response.data,
+      })
     }
+
+    return createSuccessResponse({
+      message: 'No files found',
+    })
   } catch (error) {
-    console.error('Error fetching Google Drive files:', error)
-    return Response.json(
-      {
-        message: 'Failed to fetch Google Drive files',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
-      {
-        status: 500,
-      }
-    )
+    logError('Google Drive GET', error)
+    
+    if (error instanceof Error && error.message.includes('Missing required environment variable')) {
+      return ApiErrorHandler.missingConfig(error.message)
+    }
+    
+    return ApiErrorHandler.internalError('Failed to fetch Google Drive files')
   }
 }
