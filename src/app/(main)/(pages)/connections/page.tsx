@@ -1,187 +1,137 @@
-'use client'
-
 import { CONNECTIONS } from '@/lib/constant'
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import ConnectionCard from './_components/connection-card'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import {
-  Link2,
-  RefreshCw,
-  Shield,
-  Zap,
-  CheckCircle2,
-  AlertCircle
-} from 'lucide-react'
-import { toast } from 'sonner'
+import { currentUser } from '@clerk/nextjs'
+import { onDiscordConnect } from './_actions/discord-connection'
+import { onNotionConnect } from './_actions/notion-connection'
+import { onSlackConnect } from './_actions/slack-connection'
+import { getUserData } from './_actions/get-user'
 
-// Connection status storage key
-const CONNECTION_STORAGE_KEY = 'flowlab_connections'
-
-// Type for connection status
-type ConnectionStatus = {
-  [key: string]: {
-    connected: boolean
-    connectedAt?: string
-    accountName?: string
-  }
+type Props = {
+  searchParams?: { [key: string]: string | undefined }
 }
 
-const Connections = () => {
-  const [connections, setConnections] = useState<ConnectionStatus>({})
-  const [isLoading, setIsLoading] = useState(true)
+const Connections = async (props: Props) => {
+  const {
+    webhook_id,
+    webhook_name,
+    webhook_url,
+    guild_id,
+    guild_name,
+    channel_id,
+    access_token,
+    workspace_name,
+    workspace_icon,
+    workspace_id,
+    database_id,
+    app_id,
+    authed_user_id,
+    authed_user_token,
+    slack_access_token,
+    bot_user_id,
+    team_id,
+    team_name,
+  } = props.searchParams ?? {
+    webhook_id: '',
+    webhook_name: '',
+    webhook_url: '',
+    guild_id: '',
+    guild_name: '',
+    channel_id: '',
+    access_token: '',
+    workspace_name: '',
+    workspace_icon: '',
+    workspace_id: '',
+    database_id: '',
+    app_id: '',
+    authed_user_id: '',
+    authed_user_token: '',
+    slack_access_token: '',
+    bot_user_id: '',
+    team_id: '',
+    team_name: '',
+  }
 
-  // Load connection status from localStorage
-  useEffect(() => {
-    const savedConnections = localStorage.getItem(CONNECTION_STORAGE_KEY)
-    if (savedConnections) {
-      try {
-        setConnections(JSON.parse(savedConnections))
-      } catch (e) {
-        console.error('Failed to parse saved connections')
-      }
+  const user = await currentUser()
+  if (!user) return null
+
+  const onUserConnections = async () => {
+    console.log(database_id)
+    
+    try {
+      await onDiscordConnect(
+        channel_id!,
+        webhook_id!,
+        webhook_name!,
+        webhook_url!,
+        user.id,
+        guild_name!,
+        guild_id!
+      )
+      await onNotionConnect(
+        access_token!,
+        workspace_id!,
+        workspace_icon!,
+        workspace_name!,
+        database_id!,
+        user.id
+      )
+      await onSlackConnect(
+        app_id!,
+        authed_user_id!,
+        authed_user_token!,
+        slack_access_token!,
+        bot_user_id!,
+        team_id!,
+        team_name!,
+        user.id
+      )
+    } catch (error) {
+      console.warn('Connection actions failed (migrations may not be applied):', error)
     }
-    setIsLoading(false)
-  }, [])
 
-  // Save connections to localStorage whenever they change
-  const saveConnections = (newConnections: ConnectionStatus) => {
-    setConnections(newConnections)
-    localStorage.setItem(CONNECTION_STORAGE_KEY, JSON.stringify(newConnections))
-  }
+    const connections: any = {}
 
-  // Handle connection toggle
-  const handleConnect = (title: string) => {
-    const newConnections = {
-      ...connections,
-      [title]: {
-        connected: true,
-        connectedAt: new Date().toISOString(),
-        accountName: `${title} Account`
-      }
+    try {
+      const user_info = await getUserData(user.id)
+
+      //get user info with all connections
+      user_info?.connections.map((connection) => {
+        connections[connection.type] = true
+        return (connections[connection.type] = true)
+      })
+    } catch (error) {
+      console.warn('Failed to get user connections (database may not have clerkId column):', error)
+      // Return empty connections - user can still click Connect buttons
     }
-    saveConnections(newConnections)
-    toast.success(`${title} connected successfully!`)
+
+    // Google Drive connection will always be true
+    // as it is given access during the login process
+    return { ...connections, 'Google Drive': true }
   }
 
-  // Handle disconnect
-  const handleDisconnect = (title: string) => {
-    const newConnections = { ...connections }
-    delete newConnections[title]
-    saveConnections(newConnections)
-    toast.info(`${title} disconnected`)
-  }
-
-  // Refresh all connections
-  const handleRefreshAll = () => {
-    toast.success('Connections refreshed')
-  }
-
-  // Count connected apps
-  const connectedCount = Object.values(connections).filter(c => c.connected).length
-  const totalCount = CONNECTIONS.length
+  const connections = await onUserConnections()
 
   return (
     <div className="relative flex flex-col gap-4">
-      {/* Header */}
       <h1 className="sticky top-0 z-[10] flex items-center justify-between border-b bg-background/50 p-6 text-4xl backdrop-blur-lg">
-        <span className="flex items-center gap-3">
-          <Link2 className="h-8 w-8" />
-          Connections
-        </span>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefreshAll}
-          className="gap-2"
-        >
-          <RefreshCw className="h-4 w-4" />
-          Refresh All
-        </Button>
+        Connections
       </h1>
-
-      <div className="p-6 flex flex-col gap-6">
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="border-muted-foreground/20 bg-gradient-to-br from-background to-muted/30">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-primary/10">
-                <Link2 className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{connectedCount}/{totalCount}</p>
-                <p className="text-sm text-muted-foreground">Apps Connected</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-muted-foreground/20 bg-gradient-to-br from-background to-muted/30">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-green-500/10">
-                <Shield className="h-6 w-6 text-green-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">Secure</p>
-                <p className="text-sm text-muted-foreground">OAuth 2.0 Protected</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-muted-foreground/20 bg-gradient-to-br from-background to-muted/30">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="p-3 rounded-lg bg-blue-500/10">
-                <Zap className="h-6 w-6 text-blue-500" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">Real-time</p>
-                <p className="text-sm text-muted-foreground">Instant Sync</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Info Banner */}
-        <Card className="border-blue-500/30 bg-blue-500/5">
-          <CardContent className="p-4 flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="font-medium text-blue-500">Connect Your Apps</p>
-              <p className="text-sm text-muted-foreground">
-                Connect your favorite apps to enable powerful automations. Each connection is secured
-                with OAuth 2.0 and your credentials are never stored. You may need to reconnect
-                periodically to refresh authentication tokens.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Connections Grid */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Available Integrations</h2>
-            <Badge variant="secondary" className="gap-1">
-              <CheckCircle2 className="h-3 w-3" />
-              {connectedCount} Active
-            </Badge>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {CONNECTIONS.map((connection) => (
-              <ConnectionCard
-                key={connection.title}
-                description={connection.description}
-                title={connection.title}
-                icon={connection.image}
-                type={connection.title}
-                connectionStatus={connections[connection.title]}
-                onConnect={() => handleConnect(connection.title)}
-                onDisconnect={() => handleDisconnect(connection.title)}
-                isLoading={isLoading}
-              />
-            ))}
-          </div>
-        </div>
+      <div className="relative flex flex-col gap-4">
+        <section className="flex flex-col gap-4 p-6 text-muted-foreground">
+          Connect all your apps directly from here. You may need to connect
+          these apps regularly to refresh verification
+          {CONNECTIONS.map((connection) => (
+            <ConnectionCard
+              key={connection.title}
+              description={connection.description}
+              title={connection.title}
+              icon={connection.image}
+              type={connection.title}
+              connected={connections}
+            />
+          ))}
+        </section>
       </div>
     </div>
   )

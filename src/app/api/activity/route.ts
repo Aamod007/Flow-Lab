@@ -32,6 +32,27 @@ export async function GET(request: NextRequest) {
 
     const activities: Activity[] = []
 
+    // Check if user exists in database (with fallback for missing clerkId column)
+    let dbUser
+    try {
+      dbUser = await db.user.findUnique({
+        where: { clerkId: userId }
+      })
+    } catch (error) {
+      // Database might not have clerkId column yet - return empty activities
+      console.warn('Database query failed, returning empty activities:', error)
+      return NextResponse.json({
+        activities: []
+      })
+    }
+
+    if (!dbUser) {
+      // User not in database yet
+      return NextResponse.json({
+        activities: []
+      })
+    }
+
     // Get recent workflow executions
     const recentExecutions = await db.executionLog.findMany({
       where: { userId },

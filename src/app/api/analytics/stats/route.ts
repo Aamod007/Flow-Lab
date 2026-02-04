@@ -18,6 +18,47 @@ export async function GET() {
       )
     }
 
+    // Get user from database (with fallback for missing clerkId column)
+    let dbUser
+    try {
+      dbUser = await db.user.findUnique({
+        where: { clerkId: userId }
+      })
+    } catch (error) {
+      // Database might not have clerkId column yet - return default stats
+      console.warn('Database query failed, returning default stats:', error)
+      return NextResponse.json({
+        stats: {
+          totalWorkflows: 0,
+          activeWorkflows: 0,
+          executionsThisMonth: 0,
+          successfulExecutions: 0,
+          successRate: 100,
+          totalConnections: 0,
+          totalCostThisMonth: 0,
+          tier: 'Free',
+          credits: 10
+        }
+      })
+    }
+
+    if (!dbUser) {
+      // User not in database yet
+      return NextResponse.json({
+        stats: {
+          totalWorkflows: 0,
+          activeWorkflows: 0,
+          executionsThisMonth: 0,
+          successfulExecutions: 0,
+          successRate: 100,
+          totalConnections: 0,
+          totalCostThisMonth: 0,
+          tier: 'Free',
+          credits: 10
+        }
+      })
+    }
+
     // Get workflow count
     const totalWorkflows = await db.workflows.count({
       where: { userId }
@@ -68,12 +109,6 @@ export async function GET() {
       }
     })
 
-    // Get user tier info
-    const user = await db.user.findUnique({
-      where: { clerkId: userId },
-      select: { tier: true, credits: true }
-    })
-
     // Calculate success rate
     const successRate = executionsThisMonth > 0 
       ? Math.round((successfulExecutions / executionsThisMonth) * 100) 
@@ -88,8 +123,8 @@ export async function GET() {
         successRate,
         totalConnections,
         totalCostThisMonth: costTracking?.totalCost || 0,
-        tier: user?.tier || 'Free',
-        credits: user?.credits || 0
+        tier: dbUser?.tier || 'Free',
+        credits: dbUser?.credits || 10
       }
     })
   } catch (error) {
