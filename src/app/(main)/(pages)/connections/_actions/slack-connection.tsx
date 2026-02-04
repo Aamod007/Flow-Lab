@@ -1,174 +1,10 @@
 'use server'
 
 import { Option } from '@/components/ui/multiple-selector'
+import { db } from '@/lib/db'
+import { currentUser } from '@clerk/nextjs'
 import axios from 'axios'
 
-// Test Slack connection using the bot token from env
-export const testSlackConnection = async (): Promise<{
-  success: boolean
-  message: string
-  data?: {
-    teamName?: string
-    botName?: string
-    botId?: string
-    channels?: number
-  }
-}> => {
-  const slackBotToken = process.env.SLACK_BOT_TOKEN
-
-  if (!slackBotToken) {
-    return {
-      success: false,
-      message: 'SLACK_BOT_TOKEN not configured in .env file',
-    }
-  }
-
-  try {
-    // Test auth
-    const authResponse = await axios.get('https://slack.com/api/auth.test', {
-      headers: { Authorization: `Bearer ${slackBotToken}` },
-    })
-
-    if (!authResponse.data.ok) {
-      throw new Error(authResponse.data.error || 'Auth test failed')
-    }
-
-    // Get bot info
-    const botInfo = authResponse.data
-
-    // Get channel count
-    const channelsResponse = await axios.get(
-      'https://slack.com/api/conversations.list',
-      {
-        headers: { Authorization: `Bearer ${slackBotToken}` },
-        params: { types: 'public_channel,private_channel', limit: 100 },
-      }
-    )
-
-    const channelCount = channelsResponse.data.ok
-      ? channelsResponse.data.channels?.length || 0
-      : 0
-
-    return {
-      success: true,
-      message: 'Successfully connected to Slack!',
-      data: {
-        teamName: botInfo.team,
-        botName: botInfo.user,
-        botId: botInfo.user_id,
-        channels: channelCount,
-      },
-    }
-  } catch (error) {
-    const errorMessage = error instanceof Error 
-      ? (error as any).response?.data?.error || error.message 
-      : 'Failed to connect to Slack'
-    console.error('Slack connection test failed:', error)
-    return {
-      success: false,
-      message: errorMessage,
-    }
-  }
-}
-
-// Get Slack channels using env bot token
-export const listSlackChannels = async (): Promise<{
-  success: boolean
-  channels: Option[]
-  message?: string
-}> => {
-  const slackBotToken = process.env.SLACK_BOT_TOKEN
-
-  if (!slackBotToken) {
-    return {
-      success: false,
-      channels: [],
-      message: 'SLACK_BOT_TOKEN not configured',
-    }
-  }
-
-  try {
-    const { data } = await axios.get('https://slack.com/api/conversations.list', {
-      headers: { Authorization: `Bearer ${slackBotToken}` },
-      params: {
-        types: 'public_channel,private_channel',
-        limit: 200,
-      },
-    })
-
-    if (!data.ok) {
-      throw new Error(data.error)
-    }
-
-    const channels = (data.channels || []).map((ch: any) => ({
-      label: `#${ch.name}`,
-      value: ch.id,
-    }))
-
-    return {
-      success: true,
-      channels,
-    }
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to list channels'
-    return {
-      success: false,
-      channels: [],
-      message: errorMessage,
-    }
-  }
-}
-
-// Send a test message to a Slack channel
-export const sendTestSlackMessage = async (
-  channelId: string,
-  message?: string
-): Promise<{ success: boolean; message: string }> => {
-  const slackBotToken = process.env.SLACK_BOT_TOKEN
-
-  if (!slackBotToken) {
-    return {
-      success: false,
-      message: 'SLACK_BOT_TOKEN not configured',
-    }
-  }
-
-  try {
-    const response = await axios.post(
-      'https://slack.com/api/chat.postMessage',
-      {
-        channel: channelId,
-        text: message || '🚀 *FlowLab Connection Test*\n\nYour Slack integration is working correctly!',
-        mrkdwn: true,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${slackBotToken}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    )
-
-    if (!response.data.ok) {
-      throw new Error(response.data.error)
-    }
-
-    return {
-      success: true,
-      message: 'Test message sent successfully!',
-    }
-  } catch (error) {
-    const errorMessage = error instanceof Error 
-      ? (error as any).response?.data?.error || error.message 
-      : 'Failed to send message'
-    return {
-      success: false,
-      message: errorMessage,
-    }
-  }
-}
-
-// Store connection (called after OAuth)
 export const onSlackConnect = async (
   app_id: string,
   authed_user_id: string,
@@ -179,49 +15,45 @@ export const onSlackConnect = async (
   team_name: string,
   user_id: string
 ): Promise<void> => {
-  // Connection stored via OAuth callback
-}
+  if (!slack_access_token) return
 
-// Get stored connection (uses env tokens for now)
-export const getSlackConnection = async (): Promise<{
-  appId: string
-  authedUserId: string
-  authedUserToken: string
-  slackAccessToken: string
-  botUserId: string
-  teamId: string
-  teamName: string
-  userId: string
-} | null> => {
-  const slackBotToken = process.env.SLACK_BOT_TOKEN
+  const slackConnection = await db.slack.findFirst({
+    where: { slackAccessToken: slack_access_token },
+    include: { connections: true },
+  })
 
-  if (!slackBotToken) {
-    return null
-  }
-
-  // Return the env-configured connection
-  return {
-    appId: process.env.SLACK_CLIENT_ID || '',
-    authedUserId: '',
-    authedUserToken: '',
-    slackAccessToken: slackBotToken,
-    botUserId: '',
-    teamId: '',
-    teamName: 'FlowLab Workspace',
-    userId: '',
+  if (!slackConnection) {
+    await db.slack.create({
+      data: {
+        userId: user_id,
+        appId: app_id,
+        authedUserId: authed_user_id,
+        authedUserToken: authed_user_token,
+        slackAccessToken: slack_access_token,
+        botUserId: bot_user_id,
+        teamId: team_id,
+        teamName: team_name,
+        connections: {
+          create: { userId: user_id, type: 'Slack' },
+        },
+      },
+    })
   }
 }
 
-// List channels for a given token (for workflow execution)
+export const getSlackConnection = async () => {
+  const user = await currentUser()
+  if (user) {
+    return await db.slack.findFirst({
+      where: { userId: user.id },
+    })
+  }
+  return null
+}
+
 export async function listBotChannels(
-  slackAccessToken?: string
+  slackAccessToken: string
 ): Promise<Option[]> {
-  const token = slackAccessToken || process.env.SLACK_BOT_TOKEN
-
-  if (!token) {
-    return []
-  }
-
   const url = `https://slack.com/api/conversations.list?${new URLSearchParams({
     types: 'public_channel,private_channel',
     limit: '200',
@@ -229,8 +61,10 @@ export async function listBotChannels(
 
   try {
     const { data } = await axios.get(url, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${slackAccessToken}` },
     })
+
+    console.log(data)
 
     if (!data.ok) throw new Error(data.error)
 
@@ -238,47 +72,58 @@ export async function listBotChannels(
 
     return data.channels
       .filter((ch: any) => ch.is_member)
-      .map((ch: any) => ({
-        label: ch.name,
-        value: ch.id,
-      }))
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    console.warn('Error listing bot channels:', errorMessage)
-    return []
+      .map((ch: any) => {
+        return { label: ch.name, value: ch.id }
+      })
+  } catch (error: any) {
+    console.error('Error listing bot channels:', error.message)
+    throw error
   }
 }
 
-// Post message to Slack channels
+const postMessageInSlackChannel = async (
+  slackAccessToken: string,
+  slackChannel: string,
+  content: string
+): Promise<void> => {
+  try {
+    await axios.post(
+      'https://slack.com/api/chat.postMessage',
+      { channel: slackChannel, text: content },
+      {
+        headers: {
+          Authorization: `Bearer ${slackAccessToken}`,
+          'Content-Type': 'application/json;charset=utf-8',
+        },
+      }
+    )
+    console.log(`Message posted successfully to channel ID: ${slackChannel}`)
+  } catch (error: any) {
+    console.error(
+      `Error posting message to Slack channel ${slackChannel}:`,
+      error?.response?.data || error.message
+    )
+  }
+}
+
+// Wrapper function to post messages to multiple Slack channels
 export const postMessageToSlack = async (
-  slackAccessToken: string | undefined,
+  slackAccessToken: string,
   selectedSlackChannels: Option[],
   content: string
 ): Promise<{ message: string }> => {
-  const token = slackAccessToken || process.env.SLACK_BOT_TOKEN
-
-  if (!token) {
-    return { message: 'No Slack token configured' }
-  }
-
   if (!content) return { message: 'Content is empty' }
   if (!selectedSlackChannels?.length) return { message: 'Channel not selected' }
 
   try {
-    for (const channel of selectedSlackChannels) {
-      await axios.post(
-        'https://slack.com/api/chat.postMessage',
-        { channel: channel.value, text: content },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json;charset=utf-8',
-          },
-        }
-      )
-    }
-    return { message: 'Success' }
+    selectedSlackChannels
+      .map((channel) => channel?.value)
+      .forEach((channel) => {
+        postMessageInSlackChannel(slackAccessToken, channel, content)
+      })
   } catch (error) {
     return { message: 'Message could not be sent to Slack' }
   }
+
+  return { message: 'Success' }
 }

@@ -1,8 +1,8 @@
 'use server'
 
-import axios from 'axios'
 import { db } from '@/lib/db'
-import { auth } from '@clerk/nextjs'
+import { currentUser } from '@clerk/nextjs'
+import axios from 'axios'
 
 export const onDiscordConnect = async (
   channel_id: string,
@@ -13,75 +13,104 @@ export const onDiscordConnect = async (
   guild_name: string,
   guild_id: string
 ) => {
-  const { userId } = auth()
-  if (!userId) {
-    return { success: false, message: 'User not authenticated' }
-  }
-
-  try {
-    // Create Discord webhook connection in database
-    const webhook = await db.discordWebhook.upsert({
-      where: { webhookId: webhook_id },
-      update: {
-        url: webhook_url,
-        name: webhook_name,
-        guildName: guild_name,
-        guildId: guild_id,
-        channelId: channel_id,
+  //check if webhook id params set
+  if (webhook_id) {
+    //check if webhook exists in database with userid
+    const webhook = await db.discordWebhook.findFirst({
+      where: {
+        userId: id,
       },
-      create: {
-        webhookId: webhook_id,
-        url: webhook_url,
-        name: webhook_name,
-        guildName: guild_name,
-        guildId: guild_id,
-        channelId: channel_id,
-        userId: userId,
-      }
+      include: {
+        connections: {
+          select: {
+            type: true,
+          },
+        },
+      },
     })
 
-    // Create connection record
-    await db.connections.create({
-      data: {
-        type: 'Discord',
-        discordWebhookId: webhook.id,
-        userId: userId,
-      }
-    })
+    //if webhook does not exist for this user
+    if (!webhook) {
+      //create new webhook
+      await db.discordWebhook.create({
+        data: {
+          userId: id,
+          webhookId: webhook_id,
+          channelId: channel_id!,
+          guildId: guild_id!,
+          name: webhook_name!,
+          url: webhook_url!,
+          guildName: guild_name!,
+          connections: {
+            create: {
+              userId: id,
+              type: 'Discord',
+            },
+          },
+        },
+      })
+    }
 
-    return { success: true }
-  } catch (error) {
-    console.error('Error saving Discord connection:', error)
-    return { success: false, message: 'Failed to save Discord connection' }
+    //if webhook exists return check for duplicate
+    if (webhook) {
+      //check if webhook exists for target channel id
+      const webhook_channel = await db.discordWebhook.findUnique({
+        where: {
+          channelId: channel_id,
+        },
+        include: {
+          connections: {
+            select: {
+              type: true,
+            },
+          },
+        },
+      })
+
+      //if no webhook for channel create new webhook
+      if (!webhook_channel) {
+        await db.discordWebhook.create({
+          data: {
+            userId: id,
+            webhookId: webhook_id,
+            channelId: channel_id!,
+            guildId: guild_id!,
+            name: webhook_name!,
+            url: webhook_url!,
+            guildName: guild_name!,
+            connections: {
+              create: {
+                userId: id,
+                type: 'Discord',
+              },
+            },
+          },
+        })
+      }
+    }
   }
 }
 
-export const getDiscordConnectionUrl = async (): Promise<{
-  url: string
-  name: string
-  guildName: string
-} | null> => {
-  const { userId } = auth()
-  if (!userId) return null
-
-  try {
+export const getDiscordConnectionUrl = async () => {
+  const user = await currentUser()
+  if (user) {
     const webhook = await db.discordWebhook.findFirst({
-      where: { userId: userId },
+      where: {
+        userId: user.id,
+      },
       select: {
         url: true,
         name: true,
         guildName: true,
-      }
+      },
     })
 
     return webhook
-  } catch (error) {
-    console.error('Error fetching Discord connection:', error)
-    return null
   }
 }
 
 export const postContentToWebHook = async (content: string, url: string) => {
+  console.log(content)
   if (content != '') {
     const posted = await axios.post(url, { content })
     if (posted) {
