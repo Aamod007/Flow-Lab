@@ -207,8 +207,9 @@ const OllamaManager = () => {
             toast.success(`${modelName} downloaded successfully!`)
             await checkOllamaConnection() // Refresh model list
 
-        } catch (error: any) {
-            toast.error(error.message || 'Failed to download model')
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Failed to download model'
+            toast.error(errorMessage)
         } finally {
             setDownloadingModel(null)
             setDownloadProgress(0)
@@ -235,8 +236,9 @@ const OllamaManager = () => {
             toast.success(`${modelName} deleted successfully!`)
             await checkOllamaConnection() // Refresh model list
 
-        } catch (error: any) {
-            toast.error(error.message || 'Failed to delete model')
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Failed to delete model'
+            toast.error(errorMessage)
         }
     }
 

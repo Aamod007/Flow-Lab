@@ -1,7 +1,6 @@
 import { ClerkWebhookSchema, validateRequest } from '@/lib/validation-schemas'
 import { ApiErrorHandler, createSuccessResponse, logError } from '@/lib/api-response'
-
-// Mock Clerk webhook handler - no database required for demo mode
+import { db } from '@/lib/db'
 
 export async function POST(req: Request) {
   try {
@@ -22,13 +21,32 @@ export async function POST(req: Request) {
       return ApiErrorHandler.validationError(validation.error)
     }
 
-    const { id, email_addresses, first_name } = validation.data.data
+    const { id, email_addresses, first_name, image_url } = validation.data.data
     const email = email_addresses?.[0]?.email_address
 
-    console.log('✅ Clerk webhook received:', { id, email, first_name })
+    if (!email) {
+      return ApiErrorHandler.badRequest('Email address is required')
+    }
 
-    // Mock response - no database update in demo mode
-    return createSuccessResponse({ received: true, userId: id })
+    // Create or update user in database
+    const user = await db.user.upsert({
+      where: { clerkId: id },
+      update: {
+        name: first_name || undefined,
+        email: email,
+        profileImage: image_url || undefined,
+      },
+      create: {
+        clerkId: id,
+        name: first_name || null,
+        email: email,
+        profileImage: image_url || null,
+        tier: 'Free',
+        credits: 10,
+      }
+    })
+
+    return createSuccessResponse({ received: true, userId: id, dbUserId: user.id })
   } catch (error) {
     logError('Clerk Webhook', error)
     return ApiErrorHandler.internalError('Error processing webhook')

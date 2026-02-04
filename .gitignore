@@ -29,6 +29,9 @@ yarn-error.log*
 .env
 .env*.local
 
+# API keys (sensitive)
+api-keys.json
+
 # vercel
 .vercel
 

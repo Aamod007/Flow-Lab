@@ -1,10 +1,80 @@
 // Client-side workflow storage utilities
-export const getWorkflowsFromStorage = () => {
-  if (typeof window === 'undefined') return []
 
-  const stored = localStorage.getItem('flowlab_workflows')
+// Type definitions
+export interface WorkflowNode {
+  id: string;
+  type: string;
+  position: { x: number; y: number };
+  data: Record<string, unknown>;
+}
+
+export interface WorkflowEdge {
+  id: string;
+  source: string;
+  target: string;
+  type?: string;
+}
+
+export interface WorkflowData {
+  id: string;
+  name: string;
+  description: string;
+  publish: boolean;
+  userId: string;
+  createdAt?: string;
+}
+
+export interface WorkflowNodesEdgesData {
+  nodes: string;
+  edges: string;
+  flowPath?: string;
+  updatedAt?: string;
+}
+
+// Validation functions
+function isWorkflowData(data: unknown): data is WorkflowData {
+  if (typeof data !== 'object' || data === null) return false;
+  
+  const workflow = data as Record<string, unknown>;
+  return (
+    typeof workflow.id === 'string' &&
+    typeof workflow.name === 'string' &&
+    typeof workflow.description === 'string' &&
+    typeof workflow.publish === 'boolean' &&
+    typeof workflow.userId === 'string'
+  );
+}
+
+function isWorkflowDataArray(data: unknown): data is WorkflowData[] {
+  return Array.isArray(data) && data.every(isWorkflowData);
+}
+
+function isWorkflowNodesEdgesData(data: unknown): data is WorkflowNodesEdgesData {
+  if (typeof data !== 'object' || data === null) return false;
+  
+  const nodesEdges = data as Record<string, unknown>;
+  return (
+    typeof nodesEdges.nodes === 'string' &&
+    typeof nodesEdges.edges === 'string'
+  );
+}
+
+export const getWorkflowsFromStorage = (): WorkflowData[] => {
+  if (typeof window === 'undefined') return [];
+
+  const stored = localStorage.getItem('flowlab_workflows');
   if (stored) {
-    return JSON.parse(stored)
+    try {
+      const parsed: unknown = JSON.parse(stored);
+      if (isWorkflowDataArray(parsed)) {
+        return parsed;
+      }
+      console.error('Invalid workflow data structure in storage');
+      return [];
+    } catch (error) {
+      console.error('Failed to parse workflow data:', error);
+      return [];
+    }
   }
 
   // Return some sample workflows for demo
@@ -16,7 +86,7 @@ export const getWorkflowsFromStorage = () => {
       publish: false,
       userId: 'demo-user-123',
     }
-  ]
+  ];
 }
 
 export const saveWorkflowToStorage = (
@@ -24,46 +94,67 @@ export const saveWorkflowToStorage = (
   description: string,
   initialNodes?: string,
   initialEdges?: string
-) => {
-  if (typeof window === 'undefined') return null
+): WorkflowData | null => {
+  if (typeof window === 'undefined') return null;
 
-  const stored = localStorage.getItem('flowlab_workflows')
-  const workflows = stored ? JSON.parse(stored) : []
+  const stored = localStorage.getItem('flowlab_workflows');
+  let workflows: WorkflowData[] = [];
+  
+  if (stored) {
+    try {
+      const parsed: unknown = JSON.parse(stored);
+      if (isWorkflowDataArray(parsed)) {
+        workflows = parsed;
+      } else {
+        console.error('Invalid workflow data structure in storage');
+      }
+    } catch (error) {
+      console.error('Failed to parse workflow data:', error);
+    }
+  }
 
-  const newWorkflow = {
+  const newWorkflow: WorkflowData = {
     id: `workflow-${Date.now()}`,
     name,
     description,
     publish: false,
     userId: 'demo-user-123',
     createdAt: new Date().toISOString(),
-  }
+  };
 
-  workflows.push(newWorkflow)
-  localStorage.setItem('flowlab_workflows', JSON.stringify(workflows))
+  workflows.push(newWorkflow);
+  localStorage.setItem('flowlab_workflows', JSON.stringify(workflows));
 
   // If initial content is provided (e.g. from a template), save it immediately
   if (initialNodes && initialEdges) {
-    saveWorkflowNodesEdges(newWorkflow.id, initialNodes, initialEdges)
+    saveWorkflowNodesEdges(newWorkflow.id, initialNodes, initialEdges);
   }
 
-  return newWorkflow
+  return newWorkflow;
 }
 
-export const getWorkflowNodesEdges = (flowId: string) => {
+export const getWorkflowNodesEdges = (flowId: string): WorkflowNodesEdgesData => {
   if (typeof window === 'undefined') {
-    return { nodes: '[]', edges: '[]' }
+    return { nodes: '[]', edges: '[]' };
   }
 
-  const stored = localStorage.getItem(`workflow_${flowId}`)
+  const stored = localStorage.getItem(`workflow_${flowId}`);
   if (stored) {
-    return JSON.parse(stored)
+    try {
+      const parsed: unknown = JSON.parse(stored);
+      if (isWorkflowNodesEdgesData(parsed)) {
+        return parsed;
+      }
+      console.error('Invalid workflow nodes/edges data structure');
+    } catch (error) {
+      console.error('Failed to parse workflow nodes/edges:', error);
+    }
   }
 
   return {
     nodes: '[]',
     edges: '[]',
-  }
+  };
 }
 
 export const saveWorkflowNodesEdges = (
@@ -71,31 +162,42 @@ export const saveWorkflowNodesEdges = (
   nodes: string,
   edges: string,
   flowPath?: string
-) => {
-  if (typeof window === 'undefined') return false
+): boolean => {
+  if (typeof window === 'undefined') return false;
 
-  const data = {
+  const data: WorkflowNodesEdgesData = {
     nodes,
     edges,
     flowPath: flowPath || '[]',
     updatedAt: new Date().toISOString(),
-  }
+  };
 
-  localStorage.setItem(`workflow_${flowId}`, JSON.stringify(data))
-  return true
+  localStorage.setItem(`workflow_${flowId}`, JSON.stringify(data));
+  return true;
 }
 
-export const updateWorkflowPublish = (workflowId: string, publish: boolean) => {
-  if (typeof window === 'undefined') return false
+export const updateWorkflowPublish = (workflowId: string, publish: boolean): boolean => {
+  if (typeof window === 'undefined') return false;
 
-  const stored = localStorage.getItem('flowlab_workflows')
-  if (!stored) return false
+  const stored = localStorage.getItem('flowlab_workflows');
+  if (!stored) return false;
 
-  const workflows = JSON.parse(stored)
-  const updatedWorkflows = workflows.map((w: any) =>
-    w.id === workflowId ? { ...w, publish } : w
-  )
+  try {
+    const parsed: unknown = JSON.parse(stored);
+    if (!isWorkflowDataArray(parsed)) {
+      console.error('Invalid workflow data structure in storage');
+      return false;
+    }
 
-  localStorage.setItem('flowlab_workflows', JSON.stringify(updatedWorkflows))
-  return true
+    const workflows = parsed;
+    const updatedWorkflows = workflows.map((w: WorkflowData) =>
+      w.id === workflowId ? { ...w, publish } : w
+    );
+
+    localStorage.setItem('flowlab_workflows', JSON.stringify(updatedWorkflows));
+    return true;
+  } catch (error) {
+    console.error('Failed to update workflow publish status:', error);
+    return false;
+  }
 }

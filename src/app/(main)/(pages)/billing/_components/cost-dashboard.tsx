@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import {
@@ -11,19 +11,53 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
-import { DollarSign, TrendingUp, AlertCircle } from 'lucide-react'
+import { DollarSign, TrendingUp, AlertCircle, Loader2 } from 'lucide-react'
 
-const MOCK_COST_DATA = [
-    { provider: 'OpenAI', model: 'GPT-4', calls: 142, tokens: '142k', cost: 4.26 },
-    { provider: 'Anthropic', model: 'Claude 3 Sonnet', calls: 89, tokens: '890k', cost: 2.67 },
-    { provider: 'Google', model: 'Gemini Pro', calls: 350, tokens: '3.5M', cost: 0.00 }, // Free tier assumption
-    { provider: 'Ollama', model: 'Llama 3', calls: 1200, tokens: '12M', cost: 0.00 },
-]
+interface CostDataItem {
+    provider: string
+    model: string
+    calls: number
+    tokens: string
+    cost: number
+}
 
 export const CostDashboard = () => {
-    const totalCost = MOCK_COST_DATA.reduce((acc, curr) => acc + curr.cost, 0)
+    const [costData, setCostData] = useState<CostDataItem[]>([])
+    const [loading, setLoading] = useState(true)
     const budget = 50.00
+
+    useEffect(() => {
+        fetchCostData()
+    }, [])
+
+    const fetchCostData = async () => {
+        try {
+            const response = await fetch('/api/analytics/cost')
+            if (response.ok) {
+                const data = await response.json()
+                setCostData(data.breakdown || [])
+            } else {
+                // If API doesn't exist yet, show empty state
+                setCostData([])
+            }
+        } catch (error) {
+            console.error('Error fetching cost data:', error)
+            setCostData([])
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const totalCost = costData.reduce((acc, curr) => acc + curr.cost, 0)
     const percentage = (totalCost / budget) * 100
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        )
+    }
 
     return (
         <div className="flex flex-col gap-6">
@@ -35,7 +69,7 @@ export const CostDashboard = () => {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">${totalCost.toFixed(2)}</div>
-                        <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+                        <p className="text-xs text-muted-foreground">Current month spending</p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -55,8 +89,8 @@ export const CostDashboard = () => {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{percentage.toFixed(1)}%</div>
-                        <Progress value={percentage} className="h-2 mt-2" />
-                        <p className="text-xs text-muted-foreground mt-2">${(budget - totalCost).toFixed(2)} remaining</p>
+                        <Progress value={Math.min(percentage, 100)} className="h-2 mt-2" />
+                        <p className="text-xs text-muted-foreground mt-2">${Math.max(budget - totalCost, 0).toFixed(2)} remaining</p>
                     </CardContent>
                 </Card>
             </div>
@@ -67,28 +101,34 @@ export const CostDashboard = () => {
                     <CardDescription>Usage by provider and model for the current month.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Provider</TableHead>
-                                <TableHead>Model</TableHead>
-                                <TableHead className="text-right">Calls</TableHead>
-                                <TableHead className="text-right">Tokens</TableHead>
-                                <TableHead className="text-right">Cost</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {MOCK_COST_DATA.map((item) => (
-                                <TableRow key={item.model}>
-                                    <TableCell className="font-medium">{item.provider}</TableCell>
-                                    <TableCell>{item.model}</TableCell>
-                                    <TableCell className="text-right">{item.calls}</TableCell>
-                                    <TableCell className="text-right">{item.tokens}</TableCell>
-                                    <TableCell className="text-right">${item.cost.toFixed(2)}</TableCell>
+                    {costData.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                            <p>No usage data yet. Start using AI providers to see cost breakdown.</p>
+                        </div>
+                    ) : (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Provider</TableHead>
+                                    <TableHead>Model</TableHead>
+                                    <TableHead className="text-right">Calls</TableHead>
+                                    <TableHead className="text-right">Tokens</TableHead>
+                                    <TableHead className="text-right">Cost</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {costData.map((item, index) => (
+                                    <TableRow key={`${item.model}-${index}`}>
+                                        <TableCell className="font-medium">{item.provider}</TableCell>
+                                        <TableCell>{item.model}</TableCell>
+                                        <TableCell className="text-right">{item.calls}</TableCell>
+                                        <TableCell className="text-right">{item.tokens}</TableCell>
+                                        <TableCell className="text-right">${item.cost.toFixed(2)}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    )}
                 </CardContent>
             </Card>
         </div>

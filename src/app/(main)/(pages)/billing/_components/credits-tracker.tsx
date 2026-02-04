@@ -1,16 +1,17 @@
 import React from 'react'
 import { Progress } from '@/components/ui/progress'
 import { Card, CardContent, CardTitle } from '@/components/ui/card'
+import { Tier } from '@prisma/client'
 
 type Props = {
     credits: number
-    tier: string
+    tier: Tier
 }
 
 const CreditTracker = ({ credits, tier }: Props) => {
     // Calculate max credits based on tier
-    const maxCredits = tier === 'Free' ? 10 : tier === 'Pro' ? 100 : 0
-    const progressValue = tier === 'Unlimited' ? 100 : maxCredits > 0 ? (credits / maxCredits) * 100 : 0
+    const maxCredits = tier === Tier.Free ? 10 : tier === Tier.Pro ? 100 : 0
+    const progressValue = tier === Tier.Unlimited ? 100 : maxCredits > 0 ? (credits / maxCredits) * 100 : 0
 
     return (
         <div className="p-6">
@@ -23,7 +24,7 @@ const CreditTracker = ({ credits, tier }: Props) => {
                     />
                     <div className="flex justify-end">
                         <p>
-                            {tier === 'Unlimited' ? 'Unlimited' : `${credits}/${maxCredits}`}
+                            {tier === Tier.Unlimited ? 'Unlimited' : `${credits}/${maxCredits}`}
                         </p>
                     </div>
                 </CardContent>

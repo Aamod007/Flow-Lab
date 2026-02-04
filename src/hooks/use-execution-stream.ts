@@ -49,6 +49,20 @@ export function useExecutionStream({
     const eventSourceRef = useRef<EventSource | null>(null)
     const reconnectAttemptsRef = useRef(0)
     const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+    
+    // Store callbacks in refs to avoid recreating connect/disconnect functions
+    const onEventRef = useRef(onEvent)
+    const onErrorRef = useRef(onError)
+    const onConnectRef = useRef(onConnect)
+    const onDisconnectRef = useRef(onDisconnect)
+    
+    // Keep refs up to date
+    useEffect(() => {
+        onEventRef.current = onEvent
+        onErrorRef.current = onError
+        onConnectRef.current = onConnect
+        onDisconnectRef.current = onDisconnect
+    }, [onEvent, onError, onConnect, onDisconnect])
 
     const clearEvents = useCallback(() => {
         setEvents([])
@@ -66,8 +80,8 @@ export function useExecutionStream({
         }
         
         setIsConnected(false)
-        onDisconnect?.()
-    }, [onDisconnect])
+        onDisconnectRef.current?.()
+    }, [])
 
     const connect = useCallback(() => {
         // Build URL with query params
@@ -94,14 +108,14 @@ export function useExecutionStream({
                 setIsConnected(true)
                 setError(null)
                 reconnectAttemptsRef.current = 0
-                onConnect?.()
+                onConnectRef.current?.()
             }
 
             eventSource.onmessage = (e) => {
                 try {
                     const event: ExecutionEvent = JSON.parse(e.data)
                     setEvents(prev => [...prev, event])
-                    onEvent?.(event)
+                    onEventRef.current?.(event)
                 } catch (parseError) {
                     console.error('Failed to parse SSE event:', parseError)
                 }
@@ -126,15 +140,15 @@ export function useExecutionStream({
                 } else {
                     const error = new Error('Connection failed')
                     setError(error)
-                    onError?.(error)
+                    onErrorRef.current?.(error)
                 }
             }
         } catch (err) {
             const error = err instanceof Error ? err : new Error('Failed to connect')
             setError(error)
-            onError?.(error)
+            onErrorRef.current?.(error)
         }
-    }, [executionId, workflowId, autoReconnect, maxReconnectAttempts, onConnect, onDisconnect, onError, onEvent])
+    }, [executionId, workflowId, autoReconnect, maxReconnectAttempts])
 
     // Auto-connect when IDs are provided
     useEffect(() => {
@@ -145,7 +159,8 @@ export function useExecutionStream({
         return () => {
             disconnect()
         }
-    }, [executionId, workflowId]) // Don't include connect/disconnect to avoid infinite loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [executionId, workflowId])
 
     return {
         events,

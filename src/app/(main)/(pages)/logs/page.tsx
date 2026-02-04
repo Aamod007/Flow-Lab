@@ -16,10 +16,10 @@ import {
     Trash2,
     AlertCircle,
     Zap,
-    ArrowRight
+    ArrowRight,
+    Loader2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getWorkflowsFromStorage } from '@/lib/workflow-storage'
 import Link from 'next/link'
 import { toast } from 'sonner'
 
@@ -37,56 +37,6 @@ type LogEntry = {
 }
 
 type LogFilter = 'all' | 'success' | 'failed' | 'running'
-
-// Generate mock log data based on stored workflows
-const generateMockLogs = (workflows: any[]): LogEntry[] => {
-    const statuses: LogEntry['status'][] = ['success', 'failed', 'running', 'pending']
-    const triggers = ['Manual', 'Google Drive', 'Schedule', 'Webhook', 'AI Agent']
-    const messages = {
-        success: ['Workflow completed successfully', 'All nodes executed', 'Notification sent', 'AI generated response'],
-        failed: ['Connection timeout', 'API rate limit exceeded', 'Invalid credentials', 'Context length exceeded'],
-        running: ['Processing nodes...', 'Waiting for response...', 'Executing actions...', 'Generating tokens...'],
-        pending: ['Waiting for trigger', 'Scheduled for execution', 'Queued'],
-    }
-
-    const logs: LogEntry[] = []
-    const now = new Date()
-
-    // Generate logs for each workflow
-    workflows.forEach((workflow, wIndex) => {
-        // Generate 1-5 logs per workflow
-        const logCount = Math.floor(Math.random() * 5) + 1
-        for (let i = 0; i < logCount; i++) {
-            const status = statuses[Math.floor(Math.random() * statuses.length)]
-            const hoursAgo = Math.floor(Math.random() * 48)
-            const isAI = Math.random() > 0.5
-            const triggeredBy = isAI ? 'AI Agent' : triggers[Math.floor(Math.random() * triggers.length)]
-
-            const tokens = status === 'success' && (triggeredBy === 'AI Agent' || Math.random() > 0.7)
-                ? Math.floor(Math.random() * 2000) + 100
-                : undefined
-
-            // Mock cost calculation ($0.002 per 1k tokens avg)
-            const cost = tokens && tokens > 0 ? `$${((tokens / 1000) * 0.002).toFixed(4)}` : undefined
-
-            logs.push({
-                id: `log-${workflow.id}-${i}`,
-                workflowId: workflow.id,
-                workflowName: workflow.name,
-                status,
-                message: messages[status][Math.floor(Math.random() * messages[status].length)],
-                timestamp: new Date(now.getTime() - hoursAgo * 60 * 60 * 1000),
-                duration: status === 'success' ? Math.floor(Math.random() * 5000) + 500 : undefined,
-                triggeredBy,
-                tokens,
-                cost
-            })
-        }
-    })
-
-    // Sort by timestamp descending (most recent first)
-    return logs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-}
 
 const getStatusConfig = (status: LogEntry['status']) => {
     switch (status) {
@@ -142,12 +92,35 @@ const LogsPage = () => {
     const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
-        // Load workflows and generate mock logs
-        const workflows = getWorkflowsFromStorage()
-        const generatedLogs = generateMockLogs(workflows)
-        setLogs(generatedLogs)
-        setIsLoading(false)
+        fetchLogs()
     }, [])
+
+    const fetchLogs = async () => {
+        setIsLoading(true)
+        try {
+            const response = await fetch('/api/logs')
+            if (response.ok) {
+                const data = await response.json()
+                const formattedLogs = (data.logs || []).map((log: any) => ({
+                    ...log,
+                    timestamp: new Date(log.timestamp || log.startTime),
+                    status: log.status?.toLowerCase() === 'completed' ? 'success' 
+                        : log.status?.toLowerCase() === 'running' ? 'running'
+                        : log.status?.toLowerCase() === 'failed' ? 'failed' 
+                        : 'pending'
+                }))
+                setLogs(formattedLogs)
+            } else {
+                // If API not ready, show empty state
+                setLogs([])
+            }
+        } catch (error) {
+            console.error('Error fetching logs:', error)
+            setLogs([])
+        } finally {
+            setIsLoading(false)
+        }
+    }
 
     const filteredLogs = filter === 'all'
         ? logs
@@ -161,11 +134,7 @@ const LogsPage = () => {
     }
 
     const handleRefresh = () => {
-        setIsLoading(true)
-        const workflows = getWorkflowsFromStorage()
-        const generatedLogs = generateMockLogs(workflows)
-        setLogs(generatedLogs)
-        setIsLoading(false)
+        fetchLogs()
         toast.success('Logs refreshed')
     }
 

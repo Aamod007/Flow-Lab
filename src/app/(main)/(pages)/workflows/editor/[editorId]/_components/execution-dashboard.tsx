@@ -31,10 +31,6 @@ type AgentStatus = {
     model?: string
 }
 
-const MOCK_LOGS: LogEntry[] = []
-
-const MOCK_AGENTS: AgentStatus[] = []
-
 const ExecutionDashboard = () => {
     const { state } = useEditor()
     // @ts-ignore

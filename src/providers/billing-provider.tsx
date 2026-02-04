@@ -1,18 +1,19 @@
 'use client'
 
 import React from 'react'
+import { Tier } from '@prisma/client'
 
 type BillingProviderProps = {
-  credits: string
-  tier: string
-  setCredits: React.Dispatch<React.SetStateAction<string>>
-  setTier: React.Dispatch<React.SetStateAction<string>>
+  credits: number
+  tier: Tier
+  setCredits: React.Dispatch<React.SetStateAction<number>>
+  setTier: React.Dispatch<React.SetStateAction<Tier>>
 }
 
 const initialValues: BillingProviderProps = {
-  credits: '10',
+  credits: 10,
   setCredits: () => undefined,
-  tier: 'Free',
+  tier: Tier.Free,
   setTier: () => undefined,
 }
 
@@ -39,5 +40,8 @@ export const BillingProvider = ({ children }: WithChildProps) => {
 
 export const useBilling = () => {
   const state = React.useContext(context)
+  if (!state) {
+    throw new Error('useBilling must be used within BillingProvider')
+  }
   return state
 }

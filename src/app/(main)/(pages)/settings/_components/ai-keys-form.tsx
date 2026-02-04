@@ -213,7 +213,8 @@ const AiKeysForm = () => {
             // Save to localStorage
             saveApiKeys(providerId, key)
 
-        } catch (error: any) {
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : `Failed to connect to ${provider.name}`
             setApiKeys(prev => ({
                 ...prev,
                 [providerId]: {
@@ -221,7 +222,7 @@ const AiKeysForm = () => {
                     status: 'error'
                 }
             }))
-            toast.error(error.message || `Failed to connect to ${provider.name}`)
+            toast.error(errorMessage)
         }
     }
 

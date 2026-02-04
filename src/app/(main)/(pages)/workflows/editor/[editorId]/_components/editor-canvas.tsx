@@ -112,7 +112,7 @@ const EditorCanvas = (props: Props) => {
 
   const onConnect = useCallback(
     (params: Edge | Connection) => setEdges((eds) => addEdge(params, eds)),
-    []
+    [setEdges]
   )
 
   const onDrop = useCallback(
@@ -177,7 +177,7 @@ const EditorCanvas = (props: Props) => {
       //@ts-ignore
       setNodes((nds) => nds.concat(newNode))
     },
-    [reactFlowInstance, state]
+    [reactFlowInstance, state, setNodes]
   )
 
   const handleClickCanvas = () => {
@@ -244,7 +244,7 @@ const EditorCanvas = (props: Props) => {
       console.error('Failed to recover from localStorage:', e)
     }
     return false
-  }, [workflowId])
+  }, [workflowId, setNodes, setEdges])
 
   const onGetWorkFlow = async () => {
     setIsWorkFlowLoading(true)
@@ -285,12 +285,10 @@ const EditorCanvas = (props: Props) => {
             const recovered = tryRecoverFromLocalStorage()
             if (!recovered) {
               // Only if NO local data found, do we stick with empty state
-              console.log('No saved workflow found anywhere, starting fresh')
             }
           }
 
         } catch (e) {
-          console.log('Error parsing server response:', e)
           if (!tryRecoverFromLocalStorage()) {
             toast.info('Starting with empty workflow')
           }
@@ -668,16 +666,16 @@ const EditorCanvas = (props: Props) => {
                     toast.success('Workflow executed successfully!')
                     const logs = result.logs || []
                     useFlowLabStore.getState().setLogs(logs)
-                    console.log(result.logs)
                   } else {
                     toast.dismiss()
                     toast.error('Execution Failed: ' + result.message)
                     const logs = result.logs || []
                     useFlowLabStore.getState().setLogs(logs)
                   }
-                } catch (e: any) {
+                } catch (e) {
+                  const errorMessage = e instanceof Error ? e.message : 'Unknown error occurred'
                   toast.dismiss()
-                  toast.error('Error: ' + e.message)
+                  toast.error('Error: ' + errorMessage)
                 } finally {
                   setIsExecuting(false)
                   setWorkflowInput('')

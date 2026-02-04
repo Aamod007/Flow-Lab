@@ -1,10 +1,10 @@
 'use client'
 
-import React, { use, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { EditUserProfileSchema } from '@/lib/types'
+import { EditUserProfileSchema, UserProfile } from '@/lib/types'
 import {
   Form,
   FormControl,
@@ -18,8 +18,8 @@ import { Button } from '../ui/button'
 import { Loader2 } from 'lucide-react'
 
 type Props = {
-  user: any
-  onUpdate?: any
+  user: UserProfile
+  onUpdate?: (name: string) => Promise<UserProfile | void>
 }
 
 const ProfileForm = ({ user, onUpdate }: Props) => {
@@ -36,14 +36,22 @@ const ProfileForm = ({ user, onUpdate }: Props) => {
   const handleSubmit = async (
     values: z.infer<typeof EditUserProfileSchema>
   ) => {
-    setIsLoading(true)
-    await onUpdate(values.name)
-    setIsLoading(false)
+    try {
+      setIsLoading(true)
+      if (onUpdate) {
+        await onUpdate(values.name)
+      }
+    } catch (error) {
+      console.error('Failed to update profile:', error)
+      // You could add toast notification here for user feedback
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   useEffect(() => {
     form.reset({ name: user.name, email: user.email })
-  }, [user])
+  }, [user, form])
 
   return (
     <Form {...form}>

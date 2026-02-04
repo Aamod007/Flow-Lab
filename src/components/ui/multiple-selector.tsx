@@ -210,7 +210,7 @@ const MultipleSelector = React.forwardRef<
         setSelected(newOptions)
         onChange?.(newOptions)
       },
-      [selected]
+      [selected, onChange]
     )
 
     const handleKeyDown = React.useCallback(

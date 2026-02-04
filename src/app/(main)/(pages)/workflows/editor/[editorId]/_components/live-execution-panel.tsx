@@ -119,6 +119,104 @@ const LiveExecutionPanel: React.FC<LiveExecutionPanelProps> = ({
         }
     }, [executionState.status, executionState.startTime])
 
+    const simulateAgentExecution = useCallback((agents: any[], executionId: string, index: number) => {
+        const timeouts: NodeJS.Timeout[] = []
+        
+        if (index >= agents.length) {
+            // Execution complete
+            const timeoutId = setTimeout(() => {
+                setExecutionState(prev => ({
+                    ...prev,
+                    status: 'COMPLETED',
+                    endTime: new Date(),
+                    events: [...prev.events, {
+                        id: `evt-${Date.now()}`,
+                        timestamp: new Date(),
+                        agentId: 'system',
+                        agentName: 'System',
+                        type: 'COMPLETED',
+                        data: { message: 'Workflow completed successfully' }
+                    }]
+                }))
+            }, 500)
+            timeouts.push(timeoutId)
+            return () => timeouts.forEach(clearTimeout)
+        }
+
+        const agent = agents[index]
+        const agentId = agent.id
+        const agentName = agent.data?.title || agent.type || `Agent ${index + 1}`
+        const isAI = agent.type === 'AI'
+
+        // Agent started
+        setExecutionState(prev => ({
+            ...prev,
+            currentAgentId: agentId,
+            events: [...prev.events, {
+                id: `evt-${Date.now()}`,
+                timestamp: new Date(),
+                agentId,
+                agentName,
+                type: 'STARTED',
+                data: { message: `${agentName} started processing` }
+            }]
+        }))
+
+        // Simulate AI reasoning (only for AI nodes)
+        if (isAI) {
+            const reasoningTimeout = setTimeout(() => {
+                const reasoning = generateMockReasoning(agentName)
+                setExecutionState(prev => ({
+                    ...prev,
+                    events: [...prev.events, {
+                        id: `evt-${Date.now()}`,
+                        timestamp: new Date(),
+                        agentId,
+                        agentName,
+                        type: 'REASONING',
+                        data: reasoning
+                    }]
+                }))
+            }, 800)
+            timeouts.push(reasoningTimeout)
+        }
+
+        // Agent completed
+        const completionTime = isAI ? 2500 + Math.random() * 1500 : 1000 + Math.random() * 500
+        const completionTimeout = setTimeout(() => {
+            const tokens = isAI ? Math.floor(100 + Math.random() * 400) : 0
+            const cost = isAI ? tokens * 0.00002 : 0
+
+            setExecutionState(prev => ({
+                ...prev,
+                completedAgents: [...prev.completedAgents, agentId],
+                events: [...prev.events, {
+                    id: `evt-${Date.now()}`,
+                    timestamp: new Date(),
+                    agentId,
+                    agentName,
+                    type: 'COMPLETED',
+                    data: {
+                        message: `${agentName} completed`,
+                        tokensUsed: tokens,
+                        cost
+                    }
+                }],
+                metrics: {
+                    ...prev.metrics,
+                    totalTokens: prev.metrics.totalTokens + tokens,
+                    totalCost: prev.metrics.totalCost + cost
+                }
+            }))
+
+            // Process next agent
+            simulateAgentExecution(agents, executionId, index + 1)
+        }, completionTime)
+        timeouts.push(completionTimeout)
+        
+        return () => timeouts.forEach(clearTimeout)
+    }, [])
+
     // Simulate execution for demo
     const startExecution = useCallback(() => {
         const executionId = `exec-${Date.now()}`
@@ -150,98 +248,7 @@ const LiveExecutionPanel: React.FC<LiveExecutionPanelProps> = ({
 
         // Simulate agent executions
         simulateAgentExecution(aiNodes, executionId, 0)
-    }, [nodes, workflowId, workflowName])
-
-    const simulateAgentExecution = (agents: any[], executionId: string, index: number) => {
-        if (index >= agents.length) {
-            // Execution complete
-            setTimeout(() => {
-                setExecutionState(prev => ({
-                    ...prev,
-                    status: 'COMPLETED',
-                    endTime: new Date(),
-                    events: [...prev.events, {
-                        id: `evt-${Date.now()}`,
-                        timestamp: new Date(),
-                        agentId: 'system',
-                        agentName: 'System',
-                        type: 'COMPLETED',
-                        data: { message: 'Workflow completed successfully' }
-                    }]
-                }))
-            }, 500)
-            return
-        }
-
-        const agent = agents[index]
-        const agentId = agent.id
-        const agentName = agent.data?.title || agent.type || `Agent ${index + 1}`
-        const isAI = agent.type === 'AI'
-
-        // Agent started
-        setExecutionState(prev => ({
-            ...prev,
-            currentAgentId: agentId,
-            events: [...prev.events, {
-                id: `evt-${Date.now()}`,
-                timestamp: new Date(),
-                agentId,
-                agentName,
-                type: 'STARTED',
-                data: { message: `${agentName} started processing` }
-            }]
-        }))
-
-        // Simulate AI reasoning (only for AI nodes)
-        if (isAI) {
-            setTimeout(() => {
-                const reasoning = generateMockReasoning(agentName)
-                setExecutionState(prev => ({
-                    ...prev,
-                    events: [...prev.events, {
-                        id: `evt-${Date.now()}`,
-                        timestamp: new Date(),
-                        agentId,
-                        agentName,
-                        type: 'REASONING',
-                        data: reasoning
-                    }]
-                }))
-            }, 800)
-        }
-
-        // Agent completed
-        const completionTime = isAI ? 2500 + Math.random() * 1500 : 1000 + Math.random() * 500
-        setTimeout(() => {
-            const tokens = isAI ? Math.floor(100 + Math.random() * 400) : 0
-            const cost = isAI ? tokens * 0.00002 : 0
-
-            setExecutionState(prev => ({
-                ...prev,
-                completedAgents: [...prev.completedAgents, agentId],
-                events: [...prev.events, {
-                    id: `evt-${Date.now()}`,
-                    timestamp: new Date(),
-                    agentId,
-                    agentName,
-                    type: 'COMPLETED',
-                    data: {
-                        message: `${agentName} completed`,
-                        tokensUsed: tokens,
-                        cost
-                    }
-                }],
-                metrics: {
-                    ...prev.metrics,
-                    totalTokens: prev.metrics.totalTokens + tokens,
-                    totalCost: prev.metrics.totalCost + cost
-                }
-            }))
-
-            // Process next agent
-            simulateAgentExecution(agents, executionId, index + 1)
-        }, completionTime)
-    }
+    }, [nodes, workflowId, workflowName, simulateAgentExecution])
 
     const generateMockReasoning = (agentName: string) => {
         const reasonings = [

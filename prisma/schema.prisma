@@ -6,8 +6,15 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+enum Tier {
+  Free
+  Pro
+  Unlimited
 }
 
 model User {
@@ -17,8 +24,8 @@ model User {
   name         String?
   email        String  @unique
   profileImage String?
-  tier         String? @default("Free")
-  credits      String? @default("10")
+  tier         Tier    @default(Free)
+  credits      Int     @default(10)
 
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -51,8 +58,8 @@ model LocalGoogleCredential {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  userId Int  @unique
-  user   User @relation(fields: [userId], references: [id])
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
 }
 
 model DiscordWebhook {
@@ -63,7 +70,7 @@ model DiscordWebhook {
   guildName   String
   guildId     String
   channelId   String        @unique
-  user        User          @relation(fields: [userId], references: [clerkId])
+  user        User          @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
   userId      String
   connections Connections[]
 }
@@ -79,7 +86,7 @@ model Slack {
   teamId           String
   teamName         String
 
-  User        User          @relation(fields: [userId], references: [clerkId])
+  User        User          @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
   userId      String
   connections Connections[]
 }
@@ -91,7 +98,7 @@ model Notion {
   databaseId    String        @unique
   workspaceName String
   workspaceIcon String
-  User          User          @relation(fields: [userId], references: [clerkId])
+  User          User          @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
   userId        String
   connections   Connections[]
 }
@@ -99,13 +106,13 @@ model Notion {
 model Connections {
   id               String          @id @default(uuid())
   type             String
-  DiscordWebhook   DiscordWebhook? @relation(fields: [discordWebhookId], references: [id])
+  DiscordWebhook   DiscordWebhook? @relation(fields: [discordWebhookId], references: [id], onDelete: Cascade)
   discordWebhookId String?
-  Notion           Notion?         @relation(fields: [notionId], references: [id])
+  Notion           Notion?         @relation(fields: [notionId], references: [id], onDelete: Cascade)
   notionId         String?
-  User             User?           @relation(fields: [userId], references: [clerkId])
+  User             User?           @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
   userId           String?
-  Slack            Slack?          @relation(fields: [slackId], references: [id])
+  Slack            Slack?          @relation(fields: [slackId], references: [id], onDelete: Cascade)
   slackId          String?
 }
 
@@ -125,7 +132,7 @@ model Workflows {
   cronPath          String?
   publish           Boolean? @default(false)
   description       String
-  User              User     @relation(fields: [userId], references: [clerkId])
+  User              User     @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
   userId            String
   schedules         Schedule[]
   executionLogs     ExecutionLog[]
@@ -136,7 +143,7 @@ model ApiKey {
   provider  String
   key       String
   isActive  Boolean  @default(true)
-  User      User     @relation(fields: [userId], references: [clerkId])
+  User      User     @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
   userId    String
   
   @@unique([userId, provider])
@@ -159,7 +166,7 @@ model ExecutionLog {
   workflowId  String
   workflow    Workflows @relation(fields: [workflowId], references: [id], onDelete: Cascade)
   userId      String?
-  User        User?     @relation(fields: [userId], references: [clerkId])
+  User        User?     @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
   status      String    // "RUNNING", "COMPLETED", "FAILED"
   startTime   DateTime  @default(now())
   endTime     DateTime?
@@ -180,7 +187,7 @@ model ExecutionLog {
 model CostTracking {
   id          String   @id @default(uuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [clerkId])
+  user        User     @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
   month       String   // "YYYY-MM"
   totalCost   Float    @default(0.0)
   limit       Float?
@@ -204,7 +211,7 @@ model OllamaModel {
   lastUsed    DateTime?
   specs       String?   // JSON
   userId      String
-  User        User      @relation(fields: [userId], references: [clerkId])
+  User        User      @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
   // AgentFlow additions
   benchmarks  String?   // JSON with speed/quality benchmarks
   tokensUsed  Int?      @default(0)
@@ -227,7 +234,7 @@ model AIAgentConfig {
   isDefault   Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [clerkId])
+  user        User     @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
   
   @@unique([userId, name])
 }
@@ -245,5 +252,5 @@ model BudgetSettings {
   slackAlerts     Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  user            User     @relation(fields: [userId], references: [clerkId])
+  user            User     @relation(fields: [userId], references: [clerkId], onDelete: Cascade)
 }

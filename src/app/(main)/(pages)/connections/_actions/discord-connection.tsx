@@ -1,8 +1,8 @@
 'use server'
 
 import axios from 'axios'
-
-// Mock Discord connection for demo mode - no database required
+import { db } from '@/lib/db'
+import { auth } from '@clerk/nextjs'
 
 export const onDiscordConnect = async (
   channel_id: string,
@@ -13,9 +13,47 @@ export const onDiscordConnect = async (
   guild_name: string,
   guild_id: string
 ) => {
-  // Mock connection - just log and return success
-  console.log('Discord connection requested for guild:', guild_name)
-  return { success: true }
+  const { userId } = auth()
+  if (!userId) {
+    return { success: false, message: 'User not authenticated' }
+  }
+
+  try {
+    // Create Discord webhook connection in database
+    const webhook = await db.discordWebhook.upsert({
+      where: { webhookId: webhook_id },
+      update: {
+        url: webhook_url,
+        name: webhook_name,
+        guildName: guild_name,
+        guildId: guild_id,
+        channelId: channel_id,
+      },
+      create: {
+        webhookId: webhook_id,
+        url: webhook_url,
+        name: webhook_name,
+        guildName: guild_name,
+        guildId: guild_id,
+        channelId: channel_id,
+        userId: userId,
+      }
+    })
+
+    // Create connection record
+    await db.connections.create({
+      data: {
+        type: 'Discord',
+        discordWebhookId: webhook.id,
+        userId: userId,
+      }
+    })
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error saving Discord connection:', error)
+    return { success: false, message: 'Failed to save Discord connection' }
+  }
 }
 
 export const getDiscordConnectionUrl = async (): Promise<{
@@ -23,12 +61,27 @@ export const getDiscordConnectionUrl = async (): Promise<{
   name: string
   guildName: string
 } | null> => {
-  // Return null for demo - no database required
-  return null
+  const { userId } = auth()
+  if (!userId) return null
+
+  try {
+    const webhook = await db.discordWebhook.findFirst({
+      where: { userId: userId },
+      select: {
+        url: true,
+        name: true,
+        guildName: true,
+      }
+    })
+
+    return webhook
+  } catch (error) {
+    console.error('Error fetching Discord connection:', error)
+    return null
+  }
 }
 
 export const postContentToWebHook = async (content: string, url: string) => {
-  console.log(content)
   if (content != '') {
     const posted = await axios.post(url, { content })
     if (posted) {

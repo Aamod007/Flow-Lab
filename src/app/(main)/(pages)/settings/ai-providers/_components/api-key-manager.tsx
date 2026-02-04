@@ -155,9 +155,16 @@ const ApiKeyManager: React.FC = () => {
     const handleCopyKey = async (id: string, key: string) => {
         await navigator.clipboard.writeText(key)
         setCopiedId(id)
-        setTimeout(() => setCopiedId(null), 2000)
         toast.success('Copied to clipboard')
     }
+    
+    // Cleanup copiedId timeout
+    useEffect(() => {
+        if (copiedId) {
+            const timeoutId = setTimeout(() => setCopiedId(null), 2000)
+            return () => clearTimeout(timeoutId)
+        }
+    }, [copiedId])
 
     // Test API key
     const handleTestKey = async (provider: string, key: string) => {

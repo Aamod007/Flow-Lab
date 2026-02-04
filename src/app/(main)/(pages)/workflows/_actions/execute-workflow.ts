@@ -83,8 +83,9 @@ export const onExecuteWorkflow = async (
                                 )
                                 logs.push(`- Slack API Result: ${slackResult.message}`)
                                 output = messageContent
-                            } catch (slackError: any) {
-                                logs.push(`- Slack Error: ${slackError.message || 'Unknown error'}`)
+                            } catch (slackError) {
+                                const errorMessage = slackError instanceof Error ? slackError.message : 'Unknown error'
+                                logs.push(`- Slack Error: ${errorMessage}`)
                                 output = currentInput
                             }
                         } else {
@@ -167,12 +168,13 @@ export const onExecuteWorkflow = async (
                                 output = aiResponse.data
                                 logs.push(`- AI Response: "${output?.substring(0, 50)}..."`)
                             } else {
-                                logs.push(`- AI Failed: ${aiResponse.data}. Using mock fallback.`)
-                                output = `${currentInput} (AI Mock Processed)`
+                                logs.push(`- AI Failed: ${aiResponse.data}`)
+                                output = currentInput
                             }
-                        } catch (e: any) {
-                            logs.push(`- AI Error: ${e.message || 'Unknown error'}. Using mock fallback.`)
-                            output = `${currentInput} (AI Mock Processed)`
+                        } catch (e) {
+                            const errorMessage = e instanceof Error ? e.message : 'Unknown error'
+                            logs.push(`- AI Error: ${errorMessage}`)
+                            output = currentInput
                         }
                     }
                     break
@@ -213,9 +215,10 @@ export const onExecuteWorkflow = async (
         logs.push('Workflow execution completed successfully')
         return { success: true, message: 'Workflow completed', logs }
 
-    } catch (error: any) {
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
         console.error('Workflow Execution Failed:', error)
-        logs.push(`Error: ${error.message}`)
-        return { success: false, message: error.message, logs }
+        logs.push(`Error: ${errorMessage}`)
+        return { success: false, message: errorMessage, logs }
     }
 }

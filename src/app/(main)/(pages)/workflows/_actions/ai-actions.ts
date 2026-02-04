@@ -1,35 +1,36 @@
 'use server'
 
 import { auth } from '@clerk/nextjs'
-import fs from 'fs/promises'
-import path from 'path'
-
-const DB_PATH = path.join(process.cwd(), 'api-keys.json')
+import { db } from '@/lib/db'
 
 const getAPIKey = async (provider: string): Promise<string | undefined> => {
     try {
-        // 1. Try Local File first
-        let userId;
-        try {
-            const session = auth();
-            userId = session.userId;
-        } catch (e) { /* ignore */ }
-
+        // 1. Try database first
+        const { userId } = auth()
+        
         if (userId) {
-            const data = await fs.readFile(DB_PATH, 'utf-8')
-            const allKeys = JSON.parse(data)
-
-            // Check if user exists in keys
-            if (allKeys[userId]) {
-                const userKeys = typeof allKeys[userId] === 'string' ? JSON.parse(allKeys[userId]) : allKeys[userId]
-                const key = userKeys[provider + '_API_KEY']
-                if (key) return key
-                // Fallback to checking direct key access if structure differs
-                if (userKeys[provider]) return userKeys[provider]
+            // Map provider names to database provider values
+            const providerMap: Record<string, string> = {
+                'OPENAI': 'openai',
+                'ANTHROPIC': 'anthropic',
+                'GOOGLE': 'google',
+                'GEMINI': 'google'
             }
+            
+            const dbProvider = providerMap[provider.toUpperCase()] || provider.toLowerCase()
+            
+            const apiKey = await db.apiKey.findFirst({
+                where: {
+                    userId,
+                    provider: dbProvider,
+                    isActive: true
+                }
+            })
+            
+            if (apiKey?.key) return apiKey.key
         }
     } catch (error) {
-        // file might not exist or parsing error
+        // Database error - fall back to environment variables
     }
 
     // 2. Fallback to Env
@@ -50,8 +51,6 @@ export async function testAIAgent(config: {
     temperature: number
     maxTokens: number
 }) {
-    console.log('Testing AI Agent with config:', config)
-
     try {
         let responseText = ''
         let cost = 0
@@ -188,10 +187,11 @@ export async function testAIAgent(config: {
             cost = 0 // Local is free
 
         } else {
-            // Fallback Mock
+            // Provider not supported
             return {
-                success: true,
-                data: `[Mock Response] Provider ${config.provider} not implemented yet. Config: ${JSON.stringify(config)}`
+                success: false,
+                data: `Provider ${config.provider} is not yet supported. Please use OpenAI, Anthropic, Gemini, Groq, or Ollama.`,
+                status: 'failed'
             }
         }
 
@@ -202,11 +202,12 @@ export async function testAIAgent(config: {
             status: 'completed'
         }
 
-    } catch (error: any) {
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
         console.error('AI Agent Error:', error)
         return {
             success: false,
-            data: error.message,
+            data: errorMessage,
             status: 'failed'
         }
     }

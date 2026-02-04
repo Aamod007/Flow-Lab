@@ -1,15 +1,29 @@
 import { ConnectionProviderProps } from '@/providers/connections-provider'
 import { z } from 'zod'
 
+// User profile interface for form components
+export interface UserProfile {
+  id: string
+  name: string
+  email: string
+  profileImage?: string
+}
+
 export const EditUserProfileSchema = z.object({
-  email: z.string().email('Required'),
-  name: z.string().min(1, 'Required'),
+  email: z.string().email('Invalid email address'),
+  name: z.string().min(1, 'Name is required'),
 })
+
+// Infer types from schemas for use in components
+export type EditUserProfileFormData = z.infer<typeof EditUserProfileSchema>
 
 export const WorkflowFormSchema = z.object({
   name: z.string().min(1, 'Required'),
   description: z.string().min(1, 'Required'),
 })
+
+// Infer types from schemas for use in components
+export type WorkflowFormData = z.infer<typeof WorkflowFormSchema>
 
 export type ConnectionTypes =
   | 'Google Drive'

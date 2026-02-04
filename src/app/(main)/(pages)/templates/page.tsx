@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -447,6 +447,14 @@ const TemplatesPage = () => {
     const [searchQuery, setSearchQuery] = useState('')
     const [copiedId, setCopiedId] = useState<string | null>(null)
     const [selectedTemplate, setSelectedTemplate] = useState<typeof templates[0] | null>(null)
+    
+    // Cleanup copiedId timeout
+    useEffect(() => {
+        if (copiedId) {
+            const timeoutId = setTimeout(() => setCopiedId(null), 2000)
+            return () => clearTimeout(timeoutId)
+        }
+    }, [copiedId])
 
     const filteredTemplates = templates.filter(t => {
         const matchesCategory = selectedCategory === 'All' || t.category === selectedCategory
@@ -525,7 +533,6 @@ const TemplatesPage = () => {
         navigator.clipboard.writeText(JSON.stringify(template, null, 2))
         setCopiedId(template.id)
         toast.success('Template copied to clipboard!')
-        setTimeout(() => setCopiedId(null), 2000)
     }
 
     return (
