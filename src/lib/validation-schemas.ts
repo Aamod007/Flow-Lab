@@ -149,6 +149,127 @@ export function validateJsonString<T>(
 }
 
 /**
+ * Execution metrics validation schemas
+ * For validating JSON stored in database metrics fields
+ */
+export const ExecutionMetricsSchema = z.object({
+  modelUsage: z.record(z.object({
+    provider: z.string().optional(),
+    cost: z.number().optional(),
+    tokens: z.number().optional(),
+  })).optional(),
+  costByProvider: z.record(z.number()).optional(),
+  avgTokens: z.number().optional(),
+  totalCost: z.number().optional(),
+}).passthrough(); // Allow additional fields
+
+export const ExecutionEventSchema = z.object({
+  type: z.string(),
+  timestamp: z.string().optional(),
+  data: z.unknown().optional(),
+}).passthrough();
+
+export const ExecutionEventsArraySchema = z.array(ExecutionEventSchema);
+
+/**
+ * Stripe product metadata validation
+ */
+export const StripeProductFeaturesSchema = z.array(z.string());
+
+/**
+ * Cost analytics response validation schemas
+ */
+export const CostBreakdownSchema = z.object({
+  provider: z.string(),
+  cost: z.number(),
+  percentage: z.number(),
+  executions: z.number(),
+});
+
+export const DailyTrendSchema = z.object({
+  date: z.string(),
+  cost: z.number(),
+  executions: z.number(),
+});
+
+export const WorkflowCostSchema = z.object({
+  workflowId: z.string(),
+  workflowName: z.string(),
+  totalCost: z.number(),
+  executions: z.number(),
+  avgCostPerRun: z.number(),
+});
+
+export const CostDataSchema = z.object({
+  total: z.number(),
+  period: z.string(),
+  breakdown: z.array(CostBreakdownSchema),
+  trend: z.array(DailyTrendSchema),
+  topWorkflows: z.array(WorkflowCostSchema),
+  executions: z.number(),
+  budget: z.object({
+    limit: z.number(),
+    used: z.number(),
+    remaining: z.number(),
+    percentage: z.number(),
+  }),
+});
+
+/**
+ * Helper function to safely parse and validate JSON from database
+ * Returns null if parsing or validation fails
+ */
+export function safeParseJson<T>(
+  schema: z.ZodSchema<T>,
+  jsonString: string | null | undefined
+): T | null {
+  if (!jsonString) return null;
+  
+  try {
+    const parsed = JSON.parse(jsonString);
+    const result = schema.safeParse(parsed);
+    
+    if (result.success) {
+      return result.data;
+    }
+    
+    console.warn('JSON validation failed:', result.error.message);
+    return null;
+  } catch (error) {
+    console.warn('JSON parse error:', error instanceof Error ? error.message : 'Unknown error');
+    return null;
+  }
+}
+
+/**
+ * Helper function to safely parse JSON from API responses
+ * Throws error with descriptive message if parsing or validation fails
+ */
+export async function safeParseApiResponse<T>(
+  schema: z.ZodSchema<T>,
+  response: Response
+): Promise<T> {
+  if (!response.ok) {
+    throw new Error(`API request failed with status ${response.status}`);
+  }
+  
+  let json: unknown;
+  try {
+    json = await response.json();
+  } catch (error) {
+    throw new Error('Failed to parse API response as JSON');
+  }
+  
+  const result = schema.safeParse(json);
+  
+  if (result.success) {
+    return result.data;
+  }
+  
+  throw new Error(`API response validation failed: ${result.error.message}`);
+}
+
+/**
  * Type exports for use in components
  */
 export type PaymentRequest = z.infer<typeof PaymentRequestSchema>;
@@ -162,3 +283,6 @@ export type WorkflowCreate = z.infer<typeof WorkflowCreateSchema>;
 export type WorkflowUpdate = z.infer<typeof WorkflowUpdateSchema>;
 export type ApiKey = z.infer<typeof ApiKeySchema>;
 export type OllamaModel = z.infer<typeof OllamaModelSchema>;
+export type ExecutionMetrics = z.infer<typeof ExecutionMetricsSchema>;
+export type ExecutionEvent = z.infer<typeof ExecutionEventSchema>;
+export type CostData = z.infer<typeof CostDataSchema>;

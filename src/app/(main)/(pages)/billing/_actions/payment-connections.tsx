@@ -30,7 +30,7 @@ export const onPaymentDetails = async () => {
         }
 
         return {
-            tier: user.tier,
+            tier: user.tier ?? 'Free',
             credits: String(user.credits),
         }
     } catch (error) {

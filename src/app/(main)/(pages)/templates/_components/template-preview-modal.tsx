@@ -354,7 +354,7 @@ export function TemplatePreviewModal({
               ) : !canUseTemplate ? (
                 <>
                   <AlertCircle className="h-4 w-4 mr-2" />
-                  Connect {missingConnections[0]} First
+                  Connect {missingConnections.length > 0 ? missingConnections[0] : 'Required Services'} First
                 </>
               ) : (
                 <>

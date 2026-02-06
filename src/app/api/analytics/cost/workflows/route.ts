@@ -120,7 +120,9 @@ export async function GET(req: NextRequest) {
     const workflows = user.workflows.map(workflow => {
       const costs = costMap.get(workflow.id) || { totalCost: 0, totalTokens: 0, costEntries: 0 }
       const executionCount = workflow.executions.length
-      const lastExecution = workflow.executions[0]?.createdAt || workflow.updatedAt
+      const lastExecution = workflow.executions.length > 0 && workflow.executions[0]?.createdAt 
+        ? workflow.executions[0].createdAt 
+        : workflow.updatedAt
 
       // Calculate trend
       const recent = recentCostMap.get(workflow.id) || 0

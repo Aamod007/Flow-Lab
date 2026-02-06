@@ -18,7 +18,32 @@ const BillingDashboard = (props: Props) => {
         const response = await fetch('/api/billing/products')
         if (response.ok) {
           const data = await response.json()
-          setStripeProducts(data.products || [])
+          // Validate products array structure
+          if (Array.isArray(data.products)) {
+            setStripeProducts(data.products)
+          } else {
+            console.warn('Invalid products structure from API, using fallback')
+            setStripeProducts([
+              {
+                id: 'price_unlimited',
+                nickname: 'Unlimited',
+                unit_amount: 9999,
+                metadata: { credits: 'Unlimited' }
+              },
+              {
+                id: 'price_pro',
+                nickname: 'Pro',
+                unit_amount: 2999,
+                metadata: { credits: '100' }
+              },
+              {
+                id: 'price_free',
+                nickname: 'Free',
+                unit_amount: 0,
+                metadata: { credits: '10' }
+              }
+            ])
+          }
         } else {
           // Fallback products if API not configured
           setStripeProducts([
@@ -82,9 +107,13 @@ const BillingDashboard = (props: Props) => {
       })
       
       if (response.ok) {
-        const { url } = await response.json()
-        if (url) {
-          window.location.href = url
+        const data = await response.json()
+        // Validate response has url property
+        if (data && typeof data.url === 'string' && data.url) {
+          window.location.href = data.url
+        } else {
+          console.error('Invalid checkout response structure')
+          alert('Payment feature requires Stripe configuration')
         }
       } else {
         console.error('Payment initiation failed')
@@ -101,7 +130,7 @@ const BillingDashboard = (props: Props) => {
       <div className="flex gap-5 p-6">
         <SubscriptionCard
           onPayment={onPayment}
-          tier={tier as string}
+          tier={(tier as string) ?? 'Free'}
           products={stripeProducts}
         />
       </div>

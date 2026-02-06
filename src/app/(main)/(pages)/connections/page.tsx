@@ -31,6 +31,7 @@ const Connections = async (props: Props) => {
     bot_user_id,
     team_id,
     team_name,
+    error,
   } = props.searchParams ?? {
     webhook_id: '',
     webhook_name: '',
@@ -50,14 +51,32 @@ const Connections = async (props: Props) => {
     bot_user_id: '',
     team_id: '',
     team_name: '',
+    error: '',
   }
 
-  const user = await currentUser()
+  let user
+  try {
+    user = await currentUser()
+  } catch (error) {
+    console.error('Clerk error:', error)
+    // Return a fallback UI when Clerk fails
+    return (
+      <div className="relative flex flex-col gap-4">
+        <h1 className="sticky top-0 z-[10] flex items-center justify-between border-b bg-background/50 p-6 text-4xl backdrop-blur-lg">
+          Connections
+        </h1>
+        <div className="mx-6 rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-4 text-yellow-500">
+          <p className="font-semibold">Authentication Service Unavailable</p>
+          <p className="text-sm">Unable to connect to authentication service. Please refresh the page or try again later.</p>
+        </div>
+      </div>
+    )
+  }
   if (!user) return null
 
   const onUserConnections = async () => {
     console.log(database_id)
-    
+
     try {
       await onDiscordConnect(
         channel_id!,
@@ -90,15 +109,14 @@ const Connections = async (props: Props) => {
       console.warn('Connection actions failed (migrations may not be applied):', error)
     }
 
-    const connections: any = {}
+    const connections: Record<string, boolean> = {}
 
     try {
       const user_info = await getUserData(user.id)
 
       //get user info with all connections
-      user_info?.connections.map((connection) => {
+      user_info?.connections.forEach((connection) => {
         connections[connection.type] = true
-        return (connections[connection.type] = true)
       })
     } catch (error) {
       console.warn('Failed to get user connections (database may not have clerkId column):', error)
@@ -117,6 +135,12 @@ const Connections = async (props: Props) => {
       <h1 className="sticky top-0 z-[10] flex items-center justify-between border-b bg-background/50 p-6 text-4xl backdrop-blur-lg">
         Connections
       </h1>
+      {error && (
+        <div className="mx-6 rounded-lg border border-red-500/50 bg-red-500/10 p-4 text-red-500">
+          <p className="font-semibold">Connection Error</p>
+          <p className="text-sm">{decodeURIComponent(error)}</p>
+        </div>
+      )}
       <div className="relative flex flex-col gap-4">
         <section className="flex flex-col gap-4 p-6 text-muted-foreground">
           Connect all your apps directly from here. You may need to connect

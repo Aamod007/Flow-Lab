@@ -12,6 +12,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
 import { db } from '@/lib/db'
+import { safeParseJson, ExecutionMetricsSchema } from '@/lib/validation-schemas'
 
 interface OptimizationSuggestion {
   id: string
@@ -110,32 +111,27 @@ export async function GET() {
 
     executionLogs.forEach(log => {
       const logWithMetrics = log as typeof log & { metrics?: string }
-      if (logWithMetrics.metrics) {
-        try {
-          const metrics = JSON.parse(logWithMetrics.metrics)
-          if (metrics.modelUsage) {
-            Object.entries(metrics.modelUsage).forEach(([model, data]: [string, any]) => {
-              if (!modelUsage[model]) {
-                modelUsage[model] = {
-                  provider: data.provider || 'unknown',
-                  model,
-                  totalCost: 0,
-                  executions: 0,
-                  workflows: new Set(),
-                  avgTokens: 0
-                }
-              }
-              modelUsage[model].totalCost += data.cost || 0
-              modelUsage[model].executions += 1
-              modelUsage[model].workflows.add(log.workflowId)
-              modelUsage[model].avgTokens = 
-                (modelUsage[model].avgTokens * (modelUsage[model].executions - 1) + (data.tokens || 0)) 
-                / modelUsage[model].executions
-            })
+      const metrics = safeParseJson(ExecutionMetricsSchema, logWithMetrics.metrics)
+      
+      if (metrics?.modelUsage) {
+        Object.entries(metrics.modelUsage).forEach(([model, data]) => {
+          if (!modelUsage[model]) {
+            modelUsage[model] = {
+              provider: data.provider || 'unknown',
+              model,
+              totalCost: 0,
+              executions: 0,
+              workflows: new Set(),
+              avgTokens: 0
+            }
           }
-        } catch (e) {
-          // Skip invalid JSON
-        }
+          modelUsage[model].totalCost += data.cost || 0
+          modelUsage[model].executions += 1
+          modelUsage[model].workflows.add(log.workflowId)
+          modelUsage[model].avgTokens = 
+            (modelUsage[model].avgTokens * (modelUsage[model].executions - 1) + (data.tokens || 0)) 
+            / modelUsage[model].executions
+        })
       }
     })
 
@@ -174,13 +170,8 @@ export async function GET() {
     // Suggest Ollama for simple tasks
     const simpleTaskWorkflows = executionLogs.filter(log => {
       const logWithMetrics = log as typeof log & { metrics?: string }
-      if (!logWithMetrics.metrics) return false
-      try {
-        const metrics = JSON.parse(logWithMetrics.metrics)
-        return metrics.avgTokens && metrics.avgTokens < 500 && metrics.totalCost > 0.01
-      } catch {
-        return false
-      }
+      const metrics = safeParseJson(ExecutionMetricsSchema, logWithMetrics.metrics)
+      return metrics && metrics.avgTokens && metrics.avgTokens < 500 && metrics.totalCost && metrics.totalCost > 0.01
     })
 
     if (simpleTaskWorkflows.length > 10) {

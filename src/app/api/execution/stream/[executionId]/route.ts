@@ -15,6 +15,7 @@
 import { NextRequest } from 'next/server'
 import { auth } from '@clerk/nextjs'
 import { db } from '@/lib/db'
+import { safeParseJson, ExecutionEventsArraySchema, ExecutionMetricsSchema } from '@/lib/validation-schemas'
 
 type RouteParams = { params: Promise<{ executionId: string }> }
 
@@ -66,8 +67,8 @@ export async function GET(
         status: execution.status,
         startTime: execution.startTime,
         endTime: execution.endTime,
-        events: executionWithExtras.events ? JSON.parse(executionWithExtras.events) : [],
-        metrics: executionWithExtras.metrics ? JSON.parse(executionWithExtras.metrics) : {},
+        events: safeParseJson(ExecutionEventsArraySchema, executionWithExtras.events) || [],
+        metrics: safeParseJson(ExecutionMetricsSchema, executionWithExtras.metrics) || {},
         timestamp: new Date().toISOString()
       }
       
@@ -121,8 +122,8 @@ export async function GET(
           // Type assertion for optional fields
           const updatedWithExtras = updated as typeof updated & { events?: string; metrics?: string }
 
-          // Parse events
-          const events = updatedWithExtras.events ? JSON.parse(updatedWithExtras.events) : []
+          // Parse events with validation
+          const events = safeParseJson(ExecutionEventsArraySchema, updatedWithExtras.events) || []
           
           // Send new events
           if (events.length > lastEventCount) {
@@ -146,7 +147,7 @@ export async function GET(
           if (updated.status === 'COMPLETED' || updated.status === 'FAILED') {
             clearInterval(pollInterval)
             
-            const metrics = updatedWithExtras.metrics ? JSON.parse(updatedWithExtras.metrics) : {}
+            const metrics = safeParseJson(ExecutionMetricsSchema, updatedWithExtras.metrics) || {}
             const finalEvent = {
               type: updated.status === 'COMPLETED' ? 'execution:completed' : 'execution:failed',
               executionId,

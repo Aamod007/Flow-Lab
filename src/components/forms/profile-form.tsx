@@ -16,6 +16,7 @@ import {
 import { Input } from '../ui/input'
 import { Button } from '../ui/button'
 import { Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 type Props = {
   user: UserProfile
@@ -40,10 +41,12 @@ const ProfileForm = ({ user, onUpdate }: Props) => {
       setIsLoading(true)
       if (onUpdate) {
         await onUpdate(values.name)
+        toast.success('Profile updated successfully')
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update profile'
       console.error('Failed to update profile:', error)
-      // You could add toast notification here for user feedback
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }

@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth, currentUser } from '@clerk/nextjs'
 import { db } from '@/lib/db'
+import { safeParseJson, ExecutionMetricsSchema } from '@/lib/validation-schemas'
 
 interface CostBreakdown {
   provider: string
@@ -104,21 +105,16 @@ export async function GET(request: NextRequest) {
     
     executionLogs.forEach(log => {
       const logWithMetrics = log as typeof log & { metrics?: string }
-      if (logWithMetrics.metrics) {
-        try {
-          const metrics = JSON.parse(logWithMetrics.metrics)
-          if (metrics.costByProvider) {
-            Object.entries(metrics.costByProvider).forEach(([provider, cost]) => {
-              if (!providerCosts[provider]) {
-                providerCosts[provider] = { cost: 0, executions: 0 }
-              }
-              providerCosts[provider].cost += cost as number
-              providerCosts[provider].executions += 1
-            })
+      const metrics = safeParseJson(ExecutionMetricsSchema, logWithMetrics.metrics)
+      
+      if (metrics?.costByProvider) {
+        Object.entries(metrics.costByProvider).forEach(([provider, cost]) => {
+          if (!providerCosts[provider]) {
+            providerCosts[provider] = { cost: 0, executions: 0 }
           }
-        } catch (e) {
-          // Skip invalid JSON
-        }
+          providerCosts[provider].cost += cost as number
+          providerCosts[provider].executions += 1
+        })
       }
     })
 
