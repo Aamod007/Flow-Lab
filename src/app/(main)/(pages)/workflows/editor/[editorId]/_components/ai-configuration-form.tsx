@@ -34,14 +34,19 @@ const AIConfigurationForm = ({ nodeConnection }: Props) => {
     // Load Ollama models
     useEffect(() => {
         const loadOllamaModels = async () => {
-            const settings = getOllamaSettings()
-            const client = getOllamaClient(settings.baseUrl)
-            const result = await client.checkConnection()
-            if (result.connected) {
-                const models = await client.listModels()
-                if (models.length > 0) {
-                    setOllamaModels(models.map(m => m.name))
+            try {
+                const settings = getOllamaSettings()
+                const client = getOllamaClient(settings.baseUrl)
+                const result = await client.checkConnection()
+                if (result.connected) {
+                    const models = await client.listModels()
+                    if (models.length > 0) {
+                        setOllamaModels(models.map(m => m.name))
+                    }
                 }
+            } catch (error) {
+                console.error('Failed to load Ollama models:', error)
+                // Silently fail - keep default models
             }
         }
         loadOllamaModels()
@@ -113,7 +118,7 @@ const AIConfigurationForm = ({ nodeConnection }: Props) => {
                     onValueChange={(val) => {
                         handleChange('provider', val)
                         if (models[val]?.length > 0) {
-                            handleChange('model', models[val][0])
+                            handleChange('model', models[val]?.[0] || '')
                         }
                     }}
                 >
@@ -173,11 +178,11 @@ const AIConfigurationForm = ({ nodeConnection }: Props) => {
                             key={preset}
                             type="button"
                             className="text-[10px] px-2 py-1 rounded bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-neutral-400 transition-colors"
-                            onClick={() => handleChange('systemPrompt', preset === 'Helpful assistant' 
+                            onClick={() => handleChange('systemPrompt', preset === 'Helpful assistant'
                                 ? 'You are a helpful assistant. Be concise and clear.'
                                 : preset === 'Professional writer'
-                                ? 'You are a professional writer. Use formal language.'
-                                : 'You are a code expert. Provide clear explanations and examples.'
+                                    ? 'You are a professional writer. Use formal language.'
+                                    : 'You are a code expert. Provide clear explanations and examples.'
                             )}
                         >
                             {preset}

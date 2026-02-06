@@ -3,6 +3,9 @@
  * This file is loaded before running tests to configure the test environment
  */
 
+// Import jest-dom matchers
+import '@testing-library/jest-dom'
+
 // Polyfill Next.js Web APIs for testing
 import { TextEncoder, TextDecoder } from 'util';
 

@@ -35,13 +35,33 @@ const DashboardPage = () => {
     const stored = getWorkflowsFromStorage()
     setWorkflows(stored)
 
-    // Load AI stats from localStorage  
+    // Load AI stats from localStorage with type validation
     const savedStats = localStorage.getItem('flowlab_ai_stats')
     if (savedStats) {
       try {
-        setAiStats(JSON.parse(savedStats))
+        const parsed = JSON.parse(savedStats)
+        // Validate parsed data has expected structure
+        if (
+          parsed &&
+          typeof parsed === 'object' &&
+          typeof parsed.totalExecutions === 'number' &&
+          typeof parsed.estimatedCost === 'number' &&
+          typeof parsed.tokensUsed === 'number' &&
+          typeof parsed.savedByLocal === 'number'
+        ) {
+          setAiStats(parsed)
+        } else {
+          console.warn('Invalid AI stats structure in localStorage')
+          setAiStats({
+            totalExecutions: 0,
+            estimatedCost: 0,
+            tokensUsed: 0,
+            savedByLocal: 0
+          })
+        }
       } catch (e) {
         // Default to zero stats if parsing fails
+        console.error('Failed to parse AI stats from localStorage:', e)
         setAiStats({
           totalExecutions: 0,
           estimatedCost: 0,
@@ -51,16 +71,28 @@ const DashboardPage = () => {
       }
     }
     
-    // Also try to fetch stats from API
+    // Also try to fetch stats from API with type validation
     const fetchStats = async () => {
       try {
         const response = await fetch('/api/analytics/stats')
         if (response.ok) {
           const data = await response.json()
-          setAiStats(prev => ({
-            ...prev,
-            ...data
-          }))
+          // Validate API response structure
+          if (
+            data &&
+            typeof data === 'object' &&
+            (typeof data.totalExecutions === 'number' || data.totalExecutions === undefined) &&
+            (typeof data.estimatedCost === 'number' || data.estimatedCost === undefined) &&
+            (typeof data.tokensUsed === 'number' || data.tokensUsed === undefined) &&
+            (typeof data.savedByLocal === 'number' || data.savedByLocal === undefined)
+          ) {
+            setAiStats(prev => ({
+              ...prev,
+              ...data
+            }))
+          } else {
+            console.warn('Invalid AI stats structure from API')
+          }
         }
       } catch (error) {
         console.error('Error fetching AI stats:', error)
@@ -73,8 +105,10 @@ const DashboardPage = () => {
   const publishedCount = workflows.filter(w => w.publish).length
   const draftCount = workflows.length - publishedCount
 
-  const maxCredits = tier === 'Free' ? 10 : tier === 'Pro' ? 100 : Infinity
-  const creditsDisplay = tier === 'Unlimited'
+  // Provide default tier if null
+  const safeTier = tier ?? 'Free'
+  const maxCredits = safeTier === 'Free' ? 10 : safeTier === 'Pro' ? 100 : Infinity
+  const creditsDisplay = safeTier === 'Unlimited'
     ? '∞'
     : `${credits}/${maxCredits}`
 

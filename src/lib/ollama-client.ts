@@ -201,7 +201,7 @@ export class OllamaClient {
 
             return knownModel || {
                 name: modelName,
-                description: data.modelfile?.split('\n')[0] || 'Custom model',
+                description: data.modelfile?.split('\n')?.[0] || 'Custom model',
                 size: 'Unknown',
                 capabilities: ['General'],
                 recommended_for: ['General tasks'],

@@ -15,36 +15,7 @@ import {
   Activity
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-interface CostData {
-  total: number
-  period: string
-  breakdown: {
-    provider: string
-    cost: number
-    percentage: number
-    executions: number
-  }[]
-  trend: {
-    date: string
-    cost: number
-    executions: number
-  }[]
-  topWorkflows: {
-    workflowId: string
-    workflowName: string
-    totalCost: number
-    executions: number
-    avgCostPerRun: number
-  }[]
-  executions: number
-  budget: {
-    limit: number
-    used: number
-    remaining: number
-    percentage: number
-  }
-}
+import { safeParseApiResponse, CostDataSchema, type CostData } from '@/lib/validation-schemas'
 
 // Provider colors for consistent theming
 const PROVIDER_COLORS: Record<string, string> = {
@@ -81,11 +52,7 @@ export function CostBreakdownChart() {
       setError(null)
       const response = await fetch(`/api/analytics/cost?period=${period}`)
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch cost data')
-      }
-      
-      const result = await response.json()
+      const result = await safeParseApiResponse(CostDataSchema, response)
       setData(result)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load cost data')
@@ -281,8 +248,8 @@ export function CostBreakdownChart() {
                   ))}
                 </div>
                 <div className="flex justify-between text-xs text-muted-foreground px-1">
-                  <span>{data.trend[0]?.date.split('-').slice(1).join('/')}</span>
-                  <span>{data.trend[data.trend.length - 1]?.date.split('-').slice(1).join('/')}</span>
+                  <span>{data.trend.length > 0 && data.trend[0]?.date ? data.trend[0].date.split('-').slice(1).join('/') : ''}</span>
+                  <span>{data.trend.length > 0 && data.trend[data.trend.length - 1]?.date ? data.trend[data.trend.length - 1].date.split('-').slice(1).join('/') : ''}</span>
                 </div>
               </div>
             )}

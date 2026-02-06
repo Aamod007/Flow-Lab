@@ -78,7 +78,12 @@ export async function testAIAgent(config: {
 
             const data = await response.json()
             if (!response.ok) throw new Error(data.error?.message || 'OpenAI API Error')
-            responseText = data.choices[0].message.content
+            
+            if (!data.choices || data.choices.length === 0) {
+              throw new Error('No response from OpenAI')
+            }
+            
+            responseText = data.choices[0]?.message?.content || 'No response text found'
             cost = (data.usage?.total_tokens || 0) * 0.000002 // Rough estimate
 
         } else if (config.provider === 'Google Gemini') {
@@ -132,7 +137,12 @@ export async function testAIAgent(config: {
 
             const data = await response.json()
             if (!response.ok) throw new Error(data.error?.message || 'Groq API Error')
-            responseText = data.choices[0].message.content
+            
+            if (!data.choices || data.choices.length === 0) {
+              throw new Error('No response from Groq')
+            }
+            
+            responseText = data.choices[0]?.message?.content || 'No response text found'
             cost = 0 // Groq is free for now
 
         } else if (config.provider === 'Anthropic') {

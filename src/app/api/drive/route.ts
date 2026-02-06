@@ -32,7 +32,10 @@ export async function GET() {
       return ApiErrorHandler.unauthorized('Google OAuth token not found')
     }
 
-    const accessToken = clerkResponse[0].token
+    const accessToken = clerkResponse[0]?.token
+    if (!accessToken) {
+      return ApiErrorHandler.unauthorized('Google OAuth token not found')
+    }
     oauth2Client.setCredentials({
       access_token: accessToken,
     })

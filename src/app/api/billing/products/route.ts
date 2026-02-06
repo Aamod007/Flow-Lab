@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs'
 import Stripe from 'stripe'
+import { safeParseJson, StripeProductFeaturesSchema } from '@/lib/validation-schemas'
 
 const stripe = process.env.STRIPE_SECRET_KEY 
   ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' })
@@ -87,9 +88,7 @@ export async function GET() {
         price: price?.unit_amount ? price.unit_amount / 100 : 0,
         interval: price?.recurring?.interval || 'month',
         priceId: price?.id,
-        features: product.metadata?.features 
-          ? JSON.parse(product.metadata.features) 
-          : []
+        features: safeParseJson(StripeProductFeaturesSchema, product.metadata?.features) || []
       }
     })
 

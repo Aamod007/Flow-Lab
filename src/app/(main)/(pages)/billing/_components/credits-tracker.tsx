@@ -9,9 +9,12 @@ type Props = {
 }
 
 const CreditTracker = ({ credits, tier }: Props) => {
+    // Provide default tier if null
+    const safeTier = tier ?? Tier.Free
+    
     // Calculate max credits based on tier
-    const maxCredits = tier === Tier.Free ? 10 : tier === Tier.Pro ? 100 : 0
-    const progressValue = tier === Tier.Unlimited ? 100 : maxCredits > 0 ? (credits / maxCredits) * 100 : 0
+    const maxCredits = safeTier === Tier.Free ? 10 : safeTier === Tier.Pro ? 100 : 0
+    const progressValue = safeTier === Tier.Unlimited ? 100 : maxCredits > 0 ? (credits / maxCredits) * 100 : 0
 
     return (
         <div className="p-6">
@@ -24,7 +27,7 @@ const CreditTracker = ({ credits, tier }: Props) => {
                     />
                     <div className="flex justify-end">
                         <p>
-                            {tier === Tier.Unlimited ? 'Unlimited' : `${credits}/${maxCredits}`}
+                            {safeTier === Tier.Unlimited ? 'Unlimited' : `${credits}/${maxCredits}`}
                         </p>
                     </div>
                 </CardContent>

@@ -22,7 +22,14 @@ export const getFileMetaData = async () => {
     'oauth_google'
   )
 
-  const accessToken = clerkResponse[0].token
+  if (!clerkResponse || clerkResponse.length === 0) {
+    return { message: 'Google OAuth token not found' }
+  }
+
+  const accessToken = clerkResponse[0]?.token
+  if (!accessToken) {
+    return { message: 'Google OAuth token not found' }
+  }
 
   oauth2Client.setCredentials({
     access_token: accessToken,
