@@ -157,7 +157,7 @@ const ApiKeyManager: React.FC = () => {
         setCopiedId(id)
         toast.success('Copied to clipboard')
     }
-    
+
     // Cleanup copiedId timeout
     useEffect(() => {
         if (copiedId) {
@@ -210,7 +210,7 @@ const ApiKeyManager: React.FC = () => {
                     <div>
                         <p className="text-sm font-medium">API keys are stored locally</p>
                         <p className="text-sm text-muted-foreground">
-                            Your API keys are stored in your browser's local storage and never sent to our servers.
+                            Your API keys are stored in your browser&apos;s local storage and never sent to our servers.
                             For production use, consider using environment variables.
                         </p>
                     </div>

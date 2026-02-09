@@ -97,10 +97,10 @@ export const BudgetAlerts = () => {
     // Generate alerts based on current spend
     useEffect(() => {
         if (loading) return
-        
+
         const newAlerts: BudgetAlert[] = []
-        const percentUsed = settings.monthlyBudget > 0 
-            ? (currentSpend / settings.monthlyBudget) * 100 
+        const percentUsed = settings.monthlyBudget > 0
+            ? (currentSpend / settings.monthlyBudget) * 100
             : 0
 
         if (percentUsed >= settings.criticalThreshold) {
@@ -149,7 +149,7 @@ export const BudgetAlerts = () => {
     }
 
     const acknowledgeAlert = (id: string) => {
-        setAlerts(alerts.map(a => 
+        setAlerts(alerts.map(a =>
             a.id === id ? { ...a, acknowledged: true } : a
         ))
     }
@@ -350,8 +350,8 @@ export const BudgetAlerts = () => {
                                 ${remaining.toFixed(2)} remaining
                             </span>
                             <span className={cn(
-                                projectedSpend > settings.monthlyBudget 
-                                    ? "text-red-500" 
+                                projectedSpend > settings.monthlyBudget
+                                    ? "text-red-500"
                                     : "text-muted-foreground"
                             )}>
                                 Projected: ${projectedSpend.toFixed(2)}
@@ -412,7 +412,7 @@ export const BudgetAlerts = () => {
                         <div className="text-center py-8 text-muted-foreground">
                             <CheckCircle2 className="h-12 w-12 mx-auto mb-3 text-green-500" />
                             <p className="font-medium">No alerts</p>
-                            <p className="text-sm">You're within your budget limits</p>
+                            <p className="text-sm">You&apos;re within your budget limits</p>
                         </div>
                     ) : (
                         <div className="space-y-3">

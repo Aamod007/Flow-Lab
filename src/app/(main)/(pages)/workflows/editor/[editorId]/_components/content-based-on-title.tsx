@@ -79,7 +79,7 @@ const ContentBasedOnTitle = ({
 
   // @ts-ignore
   const nodeConnectionType: any = nodeConnection[nodeMapper[title]]
-  
+
   // For generic nodes, show their configuration without connection check
   if (isGenericNode) {
     return (
@@ -111,7 +111,7 @@ const ContentBasedOnTitle = ({
                 </Card>
               </>
             )}
-            
+
             {title === 'Action' && (
               <>
                 <h4 className="text-sm font-medium">Action Configuration</h4>
@@ -137,7 +137,7 @@ const ContentBasedOnTitle = ({
                 </Card>
               </>
             )}
-            
+
             {title === 'Condition' && (
               <>
                 <h4 className="text-sm font-medium">Condition Configuration</h4>
@@ -168,7 +168,7 @@ const ContentBasedOnTitle = ({
                 </Card>
               </>
             )}
-            
+
             {title === 'Wait' && (
               <>
                 <h4 className="text-sm font-medium">Wait Configuration</h4>
@@ -192,7 +192,7 @@ const ContentBasedOnTitle = ({
                 </Card>
               </>
             )}
-            
+
             {title === 'Email' && (
               <>
                 <h4 className="text-sm font-medium">Email Configuration</h4>
@@ -267,7 +267,7 @@ const ContentBasedOnTitle = ({
                 </CardContent>
               </Card>
             </div>
-            
+
             <div className="space-y-2">
               <h4 className="text-sm font-medium text-muted-foreground">Output Variables</h4>
               <Card className="bg-muted/30">
@@ -287,10 +287,10 @@ const ContentBasedOnTitle = ({
                 </CardContent>
               </Card>
             </div>
-            
+
             <div className="space-y-2">
               <h4 className="text-sm font-medium text-muted-foreground">Pass to Next Node</h4>
-              <p className="text-xs text-muted-foreground">Connect this AI node's output to other nodes in your workflow.</p>
+              <p className="text-xs text-muted-foreground">Connect this AI node&apos;s output to other nodes in your workflow.</p>
             </div>
           </div>
         )}

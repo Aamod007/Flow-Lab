@@ -94,9 +94,9 @@ export function AgentCommunicationPanel({ agents, onComplete }: AgentCommunicati
           if (update.agentId) {
             setAgentStatuses(prev => ({
               ...prev,
-              [update.agentId!]: update.type === 'agent-complete' ? 'completed' : 
-                                 update.type === 'agent-start' || update.type === 'agent-working' ? 'running' : 
-                                 prev[update.agentId!]
+              [update.agentId!]: update.type === 'agent-complete' ? 'completed' :
+                update.type === 'agent-start' || update.type === 'agent-working' ? 'running' :
+                  prev[update.agentId!]
             }))
           }
 
@@ -270,7 +270,7 @@ export function AgentCommunicationPanel({ agents, onComplete }: AgentCommunicati
               <div className="text-center text-muted-foreground py-8 text-sm">
                 <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-20" />
                 <p>Agent communication will appear here</p>
-                <p className="text-xs mt-1">Click "Run Agents" to start execution</p>
+                <p className="text-xs mt-1">Click &quot;Run Agents&quot; to start execution</p>
               </div>
             )}
 
