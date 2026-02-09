@@ -1,6 +1,4 @@
-import axios from 'axios'
-import { NextResponse, NextRequest } from 'next/server'
-import url from 'url'
+import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get('code')
@@ -13,70 +11,64 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    console.log('Discord OAuth: Exchanging code for token...')
-    console.log('DISCORD_CLIENT_ID:', process.env.DISCORD_CLIENT_ID ? 'SET' : 'MISSING')
-    console.log('DISCORD_CLIENT_SECRET:', process.env.DISCORD_CLIENT_SECRET ? 'SET' : 'MISSING')
-    console.log('NEXT_PUBLIC_URL:', baseUrl)
+    console.log('Slack OAuth: Exchanging code for token...')
+    console.log('SLACK_CLIENT_ID:', process.env.SLACK_CLIENT_ID ? 'SET' : 'MISSING')
+    console.log('SLACK_CLIENT_SECRET:', process.env.SLACK_CLIENT_SECRET ? 'SET' : 'MISSING')
+    console.log('SLACK_REDIRECT_URI:', process.env.SLACK_REDIRECT_URI)
+    console.log('NEXT_PUBLIC_URL:', process.env.NEXT_PUBLIC_URL)
 
-    const data = new url.URLSearchParams()
-    data.append('client_id', process.env.DISCORD_CLIENT_ID!)
-    data.append('client_secret', process.env.DISCORD_CLIENT_SECRET!)
-    data.append('grant_type', 'authorization_code')
-    data.append('redirect_uri', `${baseUrl}/api/auth/callback/discord`)
-    data.append('code', code.toString())
+    // Make a POST request to Slack's OAuth endpoint to exchange the code for an access token
+    const response = await fetch('https://slack.com/api/oauth.v2.access', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        code,
+        client_id: process.env.SLACK_CLIENT_ID!,
+        client_secret: process.env.SLACK_CLIENT_SECRET!,
+        redirect_uri: process.env.SLACK_REDIRECT_URI!,
+      }),
+    })
 
-    const output = await axios.post(
-      'https://discord.com/api/oauth2/token',
-      data,
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      }
-    )
+    const data = await response.json()
+    console.log('Slack OAuth response:', JSON.stringify(data, null, 2))
 
-    console.log('Discord OAuth response received')
-
-    if (output.data) {
-      const access = output.data.access_token
-      const UserGuilds: any = await axios.get(
-        `https://discord.com/api/users/@me/guilds`,
-        {
-          headers: {
-            Authorization: `Bearer ${access}`,
-          },
-        }
-      )
-
-      const UserGuild = UserGuilds.data.filter(
-        (guild: any) => guild.id == output.data.webhook?.guild_id
-      )
-
-      const guildName = UserGuild[0]?.name || 'Unknown Guild'
-
-      console.log('Discord OAuth success!')
-
-      const html = generateSuccessHtml('Discord', {
-        webhook_id: output.data.webhook?.id,
-        webhook_url: output.data.webhook?.url,
-        webhook_name: output.data.webhook?.name,
-        guild_id: output.data.webhook?.guild_id,
-        guild_name: guildName,
-        channel_id: output.data.webhook?.channel_id
-      }, baseUrl)
-
-      return new NextResponse(html, {
+    // Check if the response indicates a failure
+    if (!data.ok) {
+      console.error('Slack OAuth error:', data.error)
+      return new NextResponse(generateErrorHtml(data.error || 'OAuth failed'), {
         headers: { 'Content-Type': 'text/html' },
       })
     }
 
-    return new NextResponse(generateErrorHtml('No data received'), {
+    const appId = data?.app_id
+    const userId = data?.authed_user?.id
+    const userToken = data?.authed_user?.access_token
+    const accessToken = data?.access_token
+    const botUserId = data?.bot_user_id
+    const teamId = data?.team?.id
+    const teamName = data?.team?.name
+
+    console.log('Slack OAuth success!')
+
+    // Return HTML that handles both popup and regular navigation
+    const html = generateSuccessHtml('Slack', {
+      app_id: appId,
+      authed_user_id: userId,
+      authed_user_token: userToken,
+      slack_access_token: accessToken,
+      bot_user_id: botUserId,
+      team_id: teamId,
+      team_name: teamName
+    }, baseUrl)
+
+    return new NextResponse(html, {
       headers: { 'Content-Type': 'text/html' },
     })
-  } catch (error: any) {
-    console.error('Discord OAuth error:', error?.response?.data || error.message)
-    const errorMessage = error?.response?.data?.error_description || error?.response?.data?.error || 'OAuth failed'
-    return new NextResponse(generateErrorHtml(errorMessage), {
+  } catch (error) {
+    console.error('Slack OAuth exception:', error)
+    return new NextResponse(generateErrorHtml('Internal server error during Slack OAuth'), {
       headers: { 'Content-Type': 'text/html' },
     })
   }

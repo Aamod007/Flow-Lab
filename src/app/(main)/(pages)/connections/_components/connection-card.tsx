@@ -1,3 +1,5 @@
+'use client'
+
 import { ConnectionTypes } from '@/lib/types'
 import React from 'react'
 import {
@@ -7,9 +9,8 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import Image from 'next/image'
-import Link from 'next/link'
 
-type Props = {
+interface Props {
   type: ConnectionTypes
   icon: string
   title: ConnectionTypes
@@ -27,6 +28,21 @@ const ConnectionCard = ({
 }: Props) => {
   // Handle undefined or null connected object
   const isConnected = connected && connected[type] === true
+
+  const handleConnect = () => {
+    const authUrl = `/api/auth/${encodeURIComponent(title.toLowerCase().replace(/\s+/g, '-'))}`
+    const width = 600
+    const height = 700
+    const left = (window.screen.width - width) / 2
+    const top = (window.screen.height - height) / 2
+
+    // Open OAuth in popup window
+    window.open(
+      authUrl,
+      `${title} OAuth`,
+      `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
+    )
+  }
 
   return (
     <Card className="flex w-full items-center justify-between">
@@ -51,20 +67,12 @@ const ConnectionCard = ({
             Connected
           </div>
         ) : (
-          <Link
-            href={
-              title == 'Discord'
-                ? process.env.NEXT_PUBLIC_DISCORD_REDIRECT!
-                : title == 'Notion'
-                  ? process.env.NEXT_PUBLIC_NOTION_AUTH_URL!
-                  : title == 'Slack'
-                    ? process.env.NEXT_PUBLIC_SLACK_REDIRECT!
-                    : '#'
-            }
-            className=" rounded-lg bg-primary p-2 font-bold text-primary-foreground"
+          <button
+            onClick={handleConnect}
+            className="rounded-lg bg-primary p-2 font-bold text-primary-foreground hover:bg-primary/90 cursor-pointer"
           >
             Connect
-          </Link>
+          </button>
         )}
       </div>
     </Card>

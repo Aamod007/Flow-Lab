@@ -14,11 +14,13 @@ export default authMiddleware({
         '/api/connections/test',
         '/api/ollama/(.*)',
         '/api/test/(.*)',
+        '/api/auth/callback/(.*)',
     ],
     ignoredRoutes: [
         '/api/auth/callback/discord',
         '/api/auth/callback/notion',
         '/api/auth/callback/slack',
+        '/api/auth/callback/(.*)',
         '/api/flow',
         '/api/cron/wait',
         '/api/connections/test',

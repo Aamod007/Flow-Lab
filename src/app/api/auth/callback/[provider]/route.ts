@@ -7,9 +7,20 @@ export async function GET(
 ) {
     const code = req.nextUrl.searchParams.get('code')
     const provider = params.provider
+    const error = req.nextUrl.searchParams.get('error')
+    const errorDescription = req.nextUrl.searchParams.get('error_description')
+
+    console.log(`OAuth callback received for provider: ${provider}`)
+    console.log(`Code present: ${!!code}, Error: ${error}, Error description: ${errorDescription}`)
+
+    if (error) {
+        console.error(`OAuth error for ${provider}: ${error} - ${errorDescription}`)
+        return NextResponse.redirect(`${process.env.NEXT_PUBLIC_URL}/connections?error=${encodeURIComponent(error)}&provider=${provider}`)
+    }
 
     if (!code) {
-        return NextResponse.json({ error: 'No code provided' }, { status: 400 })
+        console.error(`No authorization code received for ${provider}`)
+        return NextResponse.json({ error: 'No authorization code provided' }, { status: 400 })
     }
 
     try {
