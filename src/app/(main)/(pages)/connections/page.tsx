@@ -6,6 +6,7 @@ import { onDiscordConnect } from './_actions/discord-connection'
 import { onNotionConnect } from './_actions/notion-connection'
 import { onSlackConnect } from './_actions/slack-connection'
 import { getUserData } from './_actions/get-user'
+import { OAuthHandler } from './_components/oauth-handler'
 
 type Props = {
   searchParams?: { [key: string]: string | undefined }
@@ -132,6 +133,7 @@ const Connections = async (props: Props) => {
 
   return (
     <div className="relative flex flex-col gap-4">
+      <OAuthHandler />
       <h1 className="sticky top-0 z-[10] flex items-center justify-between border-b bg-background/50 p-6 text-4xl backdrop-blur-lg">
         Connections
       </h1>

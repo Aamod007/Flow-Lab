@@ -1,90 +1,80 @@
-import axios from 'axios'
-import { NextResponse, NextRequest } from 'next/server'
-import url from 'url'
+import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(req: NextRequest) {
-  const code = req.nextUrl.searchParams.get('code')
-  const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'
+    const code = req.nextUrl.searchParams.get('code')
+    const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://localhost:3000'
 
-  if (!code) {
-    return new NextResponse(generateErrorHtml('No code provided'), {
-      headers: { 'Content-Type': 'text/html' },
-    })
-  }
-
-  try {
-    console.log('Discord OAuth: Exchanging code for token...')
-    console.log('DISCORD_CLIENT_ID:', process.env.DISCORD_CLIENT_ID ? 'SET' : 'MISSING')
-    console.log('DISCORD_CLIENT_SECRET:', process.env.DISCORD_CLIENT_SECRET ? 'SET' : 'MISSING')
-    console.log('NEXT_PUBLIC_URL:', baseUrl)
-
-    const data = new url.URLSearchParams()
-    data.append('client_id', process.env.DISCORD_CLIENT_ID!)
-    data.append('client_secret', process.env.DISCORD_CLIENT_SECRET!)
-    data.append('grant_type', 'authorization_code')
-    data.append('redirect_uri', `${baseUrl}/api/auth/callback/discord`)
-    data.append('code', code.toString())
-
-    const output = await axios.post(
-      'https://discord.com/api/oauth2/token',
-      data,
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      }
-    )
-
-    console.log('Discord OAuth response received')
-
-    if (output.data) {
-      const access = output.data.access_token
-      const UserGuilds: any = await axios.get(
-        `https://discord.com/api/users/@me/guilds`,
-        {
-          headers: {
-            Authorization: `Bearer ${access}`,
-          },
-        }
-      )
-
-      const UserGuild = UserGuilds.data.filter(
-        (guild: any) => guild.id == output.data.webhook?.guild_id
-      )
-
-      const guildName = UserGuild[0]?.name || 'Unknown Guild'
-
-      console.log('Discord OAuth success!')
-
-      const html = generateSuccessHtml('Discord', {
-        webhook_id: output.data.webhook?.id,
-        webhook_url: output.data.webhook?.url,
-        webhook_name: output.data.webhook?.name,
-        guild_id: output.data.webhook?.guild_id,
-        guild_name: guildName,
-        channel_id: output.data.webhook?.channel_id
-      }, baseUrl)
-
-      return new NextResponse(html, {
-        headers: { 'Content-Type': 'text/html' },
-      })
+    if (!code) {
+        return new NextResponse(generateErrorHtml('No code provided'), {
+            headers: { 'Content-Type': 'text/html' },
+        })
     }
 
-    return new NextResponse(generateErrorHtml('No data received'), {
-      headers: { 'Content-Type': 'text/html' },
-    })
-  } catch (error: any) {
-    console.error('Discord OAuth error:', error?.response?.data || error.message)
-    const errorMessage = error?.response?.data?.error_description || error?.response?.data?.error || 'OAuth failed'
-    return new NextResponse(generateErrorHtml(errorMessage), {
-      headers: { 'Content-Type': 'text/html' },
-    })
-  }
+    try {
+        console.log('GitHub OAuth: Exchanging code for token...')
+        console.log('GITHUB_CLIENT_ID:', process.env.GITHUB_CLIENT_ID ? 'SET' : 'MISSING')
+        console.log('GITHUB_CLIENT_SECRET:', process.env.GITHUB_CLIENT_SECRET ? 'SET' : 'MISSING')
+
+        const redirectUri = `${baseUrl}/api/auth/callback/github`
+
+        // Exchange code for tokens
+        const response = await fetch('https://github.com/login/oauth/access_token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+                code,
+                client_id: process.env.GITHUB_CLIENT_ID!,
+                client_secret: process.env.GITHUB_CLIENT_SECRET!,
+                redirect_uri: redirectUri,
+            }),
+        })
+
+        const data = await response.json()
+        console.log('GitHub OAuth response received')
+
+        if (data.error) {
+            console.error('GitHub OAuth error:', data.error)
+            return new NextResponse(generateErrorHtml(data.error_description || data.error), {
+                headers: { 'Content-Type': 'text/html' },
+            })
+        }
+
+        // Get user info
+        const userResponse = await fetch('https://api.github.com/user', {
+            headers: {
+                Authorization: `Bearer ${data.access_token}`,
+                'Accept': 'application/vnd.github.v3+json',
+            },
+        })
+        const userInfo = await userResponse.json()
+
+        console.log('GitHub OAuth success!')
+
+        const html = generateSuccessHtml('GitHub', {
+            access_token: data.access_token,
+            username: userInfo.login,
+            name: userInfo.name,
+            avatar_url: userInfo.avatar_url,
+            repos_url: userInfo.repos_url
+        }, baseUrl)
+
+        return new NextResponse(html, {
+            headers: { 'Content-Type': 'text/html' },
+        })
+    } catch (error: any) {
+        console.error('GitHub OAuth exception:', error)
+        return new NextResponse(generateErrorHtml('Internal server error during GitHub OAuth'), {
+            headers: { 'Content-Type': 'text/html' },
+        })
+    }
 }
 
 function generateSuccessHtml(provider: string, data: Record<string, any>, baseUrl: string) {
-  const params = new URLSearchParams(data).toString()
-  return `
+    const params = new URLSearchParams(data).toString()
+    return `
 <!DOCTYPE html>
 <html>
   <head>
@@ -135,7 +125,6 @@ function generateSuccessHtml(provider: string, data: Record<string, any>, baseUr
       (function() {
         const data = ${JSON.stringify(data)};
         
-        // If opened in a popup, send message to parent and close
         if (window.opener) {
           window.opener.postMessage({ 
             type: 'OAUTH_SUCCESS', 
@@ -147,7 +136,6 @@ function generateSuccessHtml(provider: string, data: Record<string, any>, baseUr
             window.close();
           }, 1000);
         } else {
-          // If not in popup, redirect to connections page with params
           document.getElementById('status').textContent = 'Redirecting...';
           window.location.href = '${baseUrl}/connections?${params}';
         }
@@ -159,7 +147,7 @@ function generateSuccessHtml(provider: string, data: Record<string, any>, baseUr
 }
 
 function generateErrorHtml(error: string) {
-  return `
+    return `
 <!DOCTYPE html>
 <html>
   <head>

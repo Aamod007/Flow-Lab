@@ -3,6 +3,7 @@ import { DM_Sans } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/providers/theme-provider'
 import { ClerkProvider } from '@clerk/nextjs'
+import { getClerkPublishableKey } from '@/lib/env-validator'
 import { dark } from '@clerk/themes'
 import ModalProvider from '@/providers/modal-provider'
 import { Toaster } from '@/components/ui/sonner'
@@ -24,7 +25,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={font.className}>
         <ClerkProvider
-          publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+          publishableKey={getClerkPublishableKey()}
           appearance={{ baseTheme: dark }}
           localization={{
             signIn: {

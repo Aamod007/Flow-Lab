@@ -19,6 +19,7 @@ const REQUIRED_ENV_VARS = [
   'STRIPE_SECRET',
   'NEXT_PUBLIC_URL',
 ] as const;
+const CLERK_PUBLISHABLE_KEY_PATTERN = /^pk_(test|live)_[A-Za-z0-9_-]+$/;
 
 /**
  * List of optional environment variables with their defaults
@@ -50,6 +51,16 @@ export function validateEnvironment(): ValidationResult {
     if (!value || value.trim() === '') {
       missing.push(varName);
       errors.push(`Missing required environment variable: ${varName}`);
+      continue;
+    }
+    if (
+      varName === 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY' &&
+      (!CLERK_PUBLISHABLE_KEY_PATTERN.test(value) ||
+        /placeholder|xxxxx/i.test(value))
+    ) {
+      errors.push(
+        'Invalid Clerk publishable key format. Expected pk_test_... or pk_live_...'
+      );
     }
   }
 
@@ -76,6 +87,19 @@ export function getRequiredEnvVar(key: string): string {
     );
   }
   
+  return value;
+}
+
+export function getClerkPublishableKey(): string {
+  const value = getRequiredEnvVar('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY');
+  if (
+    !CLERK_PUBLISHABLE_KEY_PATTERN.test(value) ||
+    /placeholder|xxxxx/i.test(value)
+  ) {
+    throw new Error(
+      'Invalid Clerk publishable key. Set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY to a valid key from the Clerk dashboard.'
+    );
+  }
   return value;
 }
 

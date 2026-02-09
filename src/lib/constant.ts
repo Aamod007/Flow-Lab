@@ -207,5 +207,19 @@ export const CONNECTIONS: Connection[] = [
     connectionKey: 'googleNode',
     alwaysTrue: true,
   },
+  {
+    title: 'Google',
+    description: 'Connect your Google account for Gmail, Calendar, and more',
+    image: '/google.svg',
+    connectionKey: 'googleNode',
+    accessTokenKey: 'googleAccessToken',
+  },
+  {
+    title: 'GitHub',
+    description: 'Connect to GitHub for repository automation',
+    image: '/github.svg',
+    connectionKey: 'githubNode',
+    accessTokenKey: 'githubAccessToken',
+  },
 ]
 
