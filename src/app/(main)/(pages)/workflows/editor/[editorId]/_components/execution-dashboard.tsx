@@ -449,14 +449,14 @@ const ExecutionDashboard = () => {
                             <div className="flex flex-col gap-1">
                                 {logs.length === 0 && !isRunning && (
                                     <div className="text-slate-500 select-none py-10 space-y-2">
-                                        <p className="text-slate-400">// AgentFlow Execution Console</p>
-                                        <p>// Ready to execute workflow</p>
-                                        <p>// Click "Run" to start execution</p>
-                                        <p className="text-slate-600 mt-4">// Logs will appear here showing:</p>
-                                        <p className="text-slate-600">//   • Node execution status</p>
-                                        <p className="text-slate-600">//   • AI agent reasoning</p>
-                                        <p className="text-slate-600">//   • Data transformations</p>
-                                        <p className="text-slate-600">//   • Errors and warnings</p>
+                                        <p className="text-slate-400">{/* AgentFlow Execution Console */}AgentFlow Execution Console</p>
+                                        <p>Ready to execute workflow</p>
+                                        <p>Click &quot;Run&quot; to start execution</p>
+                                        <p className="text-slate-600 mt-4">Logs will appear here showing:</p>
+                                        <p className="text-slate-600">• Node execution status</p>
+                                        <p className="text-slate-600">• AI agent reasoning</p>
+                                        <p className="text-slate-600">• Data transformations</p>
+                                        <p className="text-slate-600">• Errors and warnings</p>
                                     </div>
                                 )}
                                 {logs.map((log, index) => {
@@ -530,7 +530,7 @@ const ExecutionDashboard = () => {
                                 )}
                                 {!isRunning && logs.length > 0 && (
                                     <div className="border-t border-slate-800 mt-2 pt-2 text-slate-500">
-                                        <p>// Execution complete - {logs.filter(l => l.type === 'SUCCESS').length} successful, {logs.filter(l => l.type === 'ERROR').length} errors</p>
+                                        <p>Execution complete - {logs.filter(l => l.type === 'SUCCESS').length} successful, {logs.filter(l => l.type === 'ERROR').length} errors</p>
                                     </div>
                                 )}
                             </div>

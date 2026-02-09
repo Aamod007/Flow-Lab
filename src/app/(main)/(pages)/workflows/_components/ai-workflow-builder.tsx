@@ -92,7 +92,7 @@ export function AIWorkflowBuilder() {
 
         // Analyze prompt and generate appropriate workflow
         const lowerPrompt = prompt.toLowerCase()
-        
+
         let workflow: GeneratedWorkflow
 
         if (lowerPrompt.includes('email') || lowerPrompt.includes('gmail')) {
@@ -258,7 +258,7 @@ export function AIWorkflowBuilder() {
             'Google Drive': 'Google Drive',
             'Wait': 'Wait',
         }
-        
+
         if (isFirst) return 'Trigger'
         return typeMap[nodeType] || 'AI'
     }
@@ -340,7 +340,7 @@ export function AIWorkflowBuilder() {
                         </div>
                         <h3 className="text-lg font-semibold mb-2">What would you like to automate?</h3>
                         <p className="text-sm text-muted-foreground text-center mb-6 max-w-md">
-                            Describe your workflow in natural language. I'll design the perfect AI-powered automation for you.
+                            Describe your workflow in natural language. I&apos;ll design the perfect AI-powered automation for you.
                         </p>
 
                         {/* Example Prompts */}
@@ -356,7 +356,7 @@ export function AIWorkflowBuilder() {
                                     className="w-full text-left p-3 rounded-lg border border-neutral-800 bg-card hover:bg-neutral-800 hover:border-neutral-700 transition-all text-sm group"
                                 >
                                     <span className="text-muted-foreground group-hover:text-foreground transition-colors">
-                                        "{example}"
+                                        &quot;{example}&quot;
                                     </span>
                                 </button>
                             ))}
@@ -408,7 +408,7 @@ export function AIWorkflowBuilder() {
                                                 : "bg-neutral-800"
                                     )}
                                 >
-                                    <p 
+                                    <p
                                         className="text-sm whitespace-pre-wrap"
                                         dangerouslySetInnerHTML={{
                                             __html: message.content
@@ -416,7 +416,7 @@ export function AIWorkflowBuilder() {
                                                 .replace(/\n/g, '<br />')
                                         }}
                                     />
-                                    
+
                                     {/* Workflow Preview */}
                                     {message.workflowPreview && (
                                         <div className="mt-4 rounded-xl bg-neutral-900 border border-neutral-700 overflow-hidden">
@@ -435,7 +435,7 @@ export function AIWorkflowBuilder() {
                                                     {message.workflowPreview.nodes.length} nodes
                                                 </Badge>
                                             </div>
-                                            
+
                                             {/* Node Flow Preview */}
                                             <div className="p-4 bg-neutral-950/50">
                                                 <div className="flex items-center gap-2 overflow-x-auto pb-2">

@@ -217,7 +217,7 @@ const AgentConfigurationForm = ({ }: Props) => {
           className="bg-neutral-900 border-neutral-700 min-h-[120px] text-xs font-mono resize-none"
         />
         <p className="text-[10px] text-muted-foreground mt-1">
-          Defines the agent's behavior and expertise
+          Defines the agent&apos;s behavior and expertise
         </p>
       </div>
     </div>

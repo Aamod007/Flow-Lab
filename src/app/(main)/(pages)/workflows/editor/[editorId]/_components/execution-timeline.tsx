@@ -111,7 +111,7 @@ const ExecutionTimeline: React.FC<ExecutionTimelineProps> = ({
                         Ready to Execute
                     </p>
                     <p className="text-xs text-muted-foreground/70 max-w-[200px]">
-                        Click "Start Execution" to run your workflow and see live updates
+                        Click &quot;Start Execution&quot; to run your workflow and see live updates
                     </p>
                 </div>
             </div>
